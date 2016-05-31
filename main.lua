@@ -1,5 +1,6 @@
 
 local editor = require "editor"
+local UIPanel = require "lib.UIPanel"
 
 function love.load()
 	editor.load()
@@ -7,14 +8,19 @@ end
 
 function love.update(dt)
 	editor.update( dt )
+	UIPanel.main:update( dt )
 end
 
 function love.touchpressed(ID, x, y)
-	-- touch pressy stuff
+	UIPanel.main:onTouch(x, y, ID)
 end
 
 function love.touchreleased(ID, x, y)
-	-- touch releasy stuff
+	UIPanel.main:onRelease(x, y, ID)
+end
+
+function love.touchmoved(ID, x, y)
+	UIPanel.main:onMove(x, y)
 end
 
 function love.keypressed(key)
@@ -30,7 +36,11 @@ function love.textinput(text)
 end
 
 function love.draw()
-	editor.draw()
+	UIPanel.main:draw()
+end
+
+function love.wheelmoved( x, y )
+	editor.wheelmoved( x, y )
 end
 
 if love.system.getOS() ~= "Android" and love.system.getOS() ~= "iOS" then
@@ -40,5 +50,9 @@ if love.system.getOS() ~= "Android" and love.system.getOS() ~= "iOS" then
 
 	function love.mousereleased(x, y, button)
 		return love.touchreleased(button, x, y)
+	end
+
+	function love.mousemoved(x, y)
+		return love.touchmoved(_, x, y)
 	end
 end

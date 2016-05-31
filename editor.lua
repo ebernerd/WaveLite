@@ -1,23 +1,28 @@
 
 local util = require "lib.util"
+local UIPanel = require "lib.UIPanel"
+local windowWidth, windowHeight
 
 local START_TEXT_LOOK_AT_START_OF_FILE = [==[
--- Aha, I see you're looking at this?
+--[[
+	Okay, I've done some stuff
+	--------------------------
 
-print "I changed the syntax highlighting style"
+	Firstly, I changed the syntax style.
+	Then, I got around to changing cursors.
+	You can now have multiple cursors! (ctrl-alt-arrow) (beware, bugginess lies ahead)
+	You can also select text and replace it and stuff (shift-arrow)
+	You can also scroll up and down when the text is longer
+]]
 
-if style.better() then
-	print 'Great!'
+if changes.are_cool() then
+	print "woop woop"
 else
-	print [=[ I'm so sorry ]]: ]=]
+	print 'don\'t lie!'
 end
 
---[=[
-	now for some [[nested]] comments
-	yeah they work fine
-]=]
-
-print( 5 > 2 and true or false )
+print( 5 + 2 > 6 )
+print( true and false )
 ]==]
 
 local function isShiftHeld()
@@ -36,10 +41,58 @@ local function getLineLength( line, editor, n )
 	return #line:sub( 1, n ):gsub( "\t", (" "):rep(editor.tab_spacing) )
 end
 
+local function getInternalScrollbarSize(editor)
+	local fontWidth = editor.font:getWidth " "
+	local fontHeight = editor.font:getHeight()
+	local lines = editor.files[editor.workingfile].text.lines
+
+	local internalWidth = 0
+	local internalHeight = fontHeight * #lines
+
+	for i = 1, #lines do
+		internalWidth = math.max( internalWidth, fontWidth * getLineLength( lines[i], editor ) )
+	end
+
+	return internalWidth, internalHeight
+end
+
+local function getRequiredScrollbars(editor, internalWidth, internalHeight)
+	if internalWidth > editor.contentWidth or internalHeight > editor.contentHeight then
+		return internalWidth >= editor.contentWidth - editor.scrollbar_size, internalHeight >= editor.contentHeight - editor.scrollbar_size
+	end
+	return false, false
+end
+
+local function getActualDisplaySize( editor, h, v )
+	return editor.contentWidth - ( v and editor.scrollbar_size or 0 ), editor.contentHeight - ( h and editor.scrollbar_size or 0 )
+end
+
+local function getScrollbarSizes( editor, isw, ish, contentWidth, contentHeight )
+	return contentWidth / isw * (contentWidth - 2 * editor.scrollbar_padding), contentHeight / ish * (contentHeight - 2 * editor.scrollbar_padding)
+end
+
+local function getScrollbarPositions( editor, isw, ish, contentWidth, contentHeight )
+	return editor.scrollbar_padding + editor.scrollX / isw * (contentWidth - 2 * editor.scrollbar_padding), editor.scrollbar_padding + editor.scrollY / ish * (contentHeight - 2 * editor.scrollbar_padding)
+end
+
 local editor = {}
 
+function editor.wheelmoved( x, y )
+	local contentWidth, contentHeight = getActualDisplaySize( editor, getRequiredScrollbars( editor, getInternalScrollbarSize( editor ) ) )
+	local internalWidth = 0
+	local fontWidth = editor.font:getWidth " "
+	local lines = editor.files[editor.workingfile].text.lines
+
+	for i = 1, #lines do
+		internalWidth = math.max( internalWidth, fontWidth * getLineLength( lines[i], editor ) )
+	end
+
+	editor.scrollY = math.max( 0, math.min( #editor.files[editor.workingfile].text.lines * editor.font:getHeight() - contentHeight, editor.scrollY - y * editor.scroll_speed ) )
+	editor.scrollX = math.max( 0, math.min( internalWidth - contentWidth, editor.scrollX - x * editor.scroll_speed ) )
+end
+
 function editor.load()
-	local windowWidth, windowHeight = love.window.getMode()
+	windowWidth, windowHeight = love.window.getMode()
 
 	love.keyboard.setKeyRepeat(true)
 
@@ -50,20 +103,39 @@ function editor.load()
 		lua = require "resources.languages.lua";
 	}
 
+	editor.scroll_speed = 50
+	editor.scrollbar_size = 20
+	editor.scrollbar_padding = 4
 	editor.theme = editor.themes.Default
 	editor.lang = editor.languages.lua
 	editor.font = love.graphics.newFont( "resources/fonts/Hack.ttf", 15 )
 	editor.tab_spacing = 4
 	editor.padding_left = 100
-	editor.padding_right = 100
+	editor.padding_right = 15
 	editor.padding_top = 100
-	editor.padding_bottom = 100
+	editor.padding_bottom = 15
 	editor.wide_cursor = false
 	editor.cursor_width = 1
 	editor.scrollX = 0
 	editor.scrollY = 0
 	editor.contentWidth = windowWidth - editor.padding_left - editor.padding_right
 	editor.contentHeight = windowHeight - editor.padding_top - editor.padding_bottom
+	
+	editor.panel = UIPanel.main:add( UIPanel.new( editor.padding_left, editor.padding_top, editor.contentWidth, editor.contentHeight ) )
+	editor.panel.colour = editor.themes.Default._Background
+
+	function editor.panel:onDraw()
+		editor.draw()
+	end
+
+	function editor.panel:onParentResized(parent)
+		windowWidth, windowHeight = parent.width, parent.height
+		editor.contentWidth = windowWidth - editor.padding_left - editor.padding_right
+		editor.contentHeight = windowHeight - editor.padding_top - editor.padding_bottom
+
+		self.width = editor.contentWidth
+		self.height = editor.contentHeight
+	end
 
 	editor.files = {
 		[1] = {
@@ -83,7 +155,6 @@ function editor.load()
 
 	editor.workingfile = 1
 
-
 	local fmt, state = require "lib.LanguageFormatter" (editor.lang)
 	local f = editor.files[1]
 
@@ -96,7 +167,6 @@ function editor.load()
 
 	editor.files[1].text:format()
 	editor.files[1].cursors:addCursor { 1, 1 }
-	editor.files[1].cursors:addCursor { 2, 1 }
 end
 
 function editor.update( dt )
@@ -109,7 +179,6 @@ end
 
 function editor.draw()
 
-	local windowWidth, windowHeight = love.window.getMode()
 	local wf = editor.workingfile
 	local f = editor.files[wf]
 	local cursor, selection = f.cursors:getDrawableCursor( 1, f.text )
@@ -125,14 +194,34 @@ function editor.draw()
 	local minline = math.floor( editor.scrollY / fontHeight ) + 1
 	local maxline = math.ceil( (editor.scrollY + editor.contentHeight) / fontHeight ) + 1
 	local i = minline
+	local isw, ish = getInternalScrollbarSize(editor)
+	local hsb, vsb = getRequiredScrollbars(editor, isw, ish)
+	local contentWidth, contentHeight = getActualDisplaySize( editor, hsb, vsb )
+	local sph, spv = getScrollbarPositions( editor, isw, ish, contentWidth, contentHeight )
+	local ssh, ssv = getScrollbarSizes( editor, isw, ish, contentWidth, contentHeight )
+
 
 	love.graphics.push() -- drawing the code content
-		love.graphics.setScissor( editor.padding_left - editor.scrollX, editor.padding_top - editor.scrollY, editor.contentWidth, editor.contentHeight )
-		love.graphics.translate( editor.padding_left - editor.scrollX, editor.padding_top - editor.scrollY )
 		love.graphics.setFont( editor.font )
 		love.graphics.setBackgroundColor( editor.theme._Background )
 		love.graphics.setColor( 180, 180, 180 )
-		love.graphics.rectangle( "line", 0, 0, editor.contentWidth, editor.contentHeight )
+		love.graphics.rectangle( "line", 0, 0, contentWidth, contentHeight )
+
+		if hsb then
+			love.graphics.setColor(editor.theme._ScrollbarTray)
+			love.graphics.rectangle( "fill", 0, contentHeight, contentWidth, editor.scrollbar_size )
+			love.graphics.setColor(editor.theme._ScrollbarSlider)
+			love.graphics.rectangle( "fill", sph, contentHeight + editor.scrollbar_padding, ssh, editor.scrollbar_size - 2 * editor.scrollbar_padding )
+		end
+
+		if vsb then
+			love.graphics.setColor(editor.theme._ScrollbarTray)
+			love.graphics.rectangle( "fill", contentWidth, 0, editor.scrollbar_size, contentHeight )
+			love.graphics.setColor(editor.theme._ScrollbarSlider)
+			love.graphics.rectangle( "fill", contentWidth + editor.scrollbar_padding, spv, editor.scrollbar_size - 2 * editor.scrollbar_padding, ssv )
+		end
+
+		love.graphics.translate( -editor.scrollX, -editor.scrollY )
 		love.graphics.setColor( editor.theme._BackgroundSelected )
 
 		while i <= maxline do
@@ -181,8 +270,6 @@ function editor.draw()
 				util.renderText( f.text:getFormatted(i):gsub( "\t", tabs ), editor.theme, 0, (i-1) * fontHeight )
 			end
 		end
-
-		love.graphics.setScissor()
 
 	love.graphics.pop()
 	love.graphics.print( "Col " .. cchar .. " | Line " .. cline .. " | Selection " .. (sline and "Col " .. schar .. " | Selection Line " .. sline or "None"), 10, windowHeight - fontHeight - 20 )

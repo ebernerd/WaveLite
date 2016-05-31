@@ -43,5 +43,7 @@ return {
 	_Background = rgb( 0xfafafa );
 	_BackgroundSelected = rgb( 0xa0b0f0 );
 	_ForegroundSelected = rgb( 0xffffff );
+	_ScrollbarTray = rgb( 0xdddddd );
+	_ScrollbarSlider = rgb( 0xcccccc );
 }
 	
