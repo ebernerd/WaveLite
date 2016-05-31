@@ -1,13 +1,12 @@
 
-local editor = require "editor"
-local UIPanel = require "lib.UIPanel"
+local editor = require "src.editor"
+local UIPanel = require "src.UIPanel"
 
 function love.load()
 	editor.load()
 end
 
 function love.update(dt)
-	editor.update( dt )
 	UIPanel.main:update( dt )
 end
 
@@ -24,15 +23,15 @@ function love.touchmoved(ID, x, y)
 end
 
 function love.keypressed(key)
-	editor.keypressed(key)
+	UIPanel.main:onKeypress(key)
 end
 
 function love.keyreleased(key)
-	-- key releasy stuff
+	UIPanel.main:onKeyrelease(key)
 end
 
 function love.textinput(text)
-	editor.textinput( text )
+	UIPanel.main:onTextInput(text)
 end
 
 function love.draw()

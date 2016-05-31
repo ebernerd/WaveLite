@@ -3,40 +3,6 @@ local util = require "lib.util"
 local UIPanel = require "lib.UIPanel"
 local windowWidth, windowHeight
 
-local START_TEXT_LOOK_AT_START_OF_FILE = [==[
---[[
-	Okay, I've done some stuff
-	--------------------------
-
-	Firstly, I changed the syntax style.
-	Then, I got around to changing cursors.
-	You can now have multiple cursors! (ctrl-alt-arrow) (beware, bugginess lies ahead)
-	You can also select text and replace it and stuff (shift-arrow)
-	You can also scroll up and down when the text is longer
-]]
-
-if changes.are_cool() then
-	print "woop woop"
-else
-	print 'don\'t lie!'
-end
-
-print( 5 + 2 > 6 )
-print( true and false )
-]==]
-
-local function isShiftHeld()
-	return love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift")
-end
-
-local function isCtrlHeld()
-	return love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl")
-end
-
-local function isAltHeld()
-	return love.keyboard.isDown("lalt") or love.keyboard.isDown("ralt")
-end
-
 local function getLineLength( line, editor, n )
 	return #line:sub( 1, n ):gsub( "\t", (" "):rep(editor.tab_spacing) )
 end

@@ -1,7 +1,7 @@
 
-local util = require "util"
-local cursor = require "cursor"
-local format = require "formatting"
+local util = require "src.util"
+local cursor = require "src.cursor"
+local format = require "src.formatting"
 
 local text_editor = {}
 
@@ -65,19 +65,5 @@ function text_editor.write( lines, formatting, ordered_cursors, text, text_assig
 	end
 
 end
-
-local lines = {
-	"AA AA";
-	"some text stuff";
-}
-local flines = util.copyt( lines )
-local states = { [0] = {} }
-local cursors = { cursor.new( 1, 3 ), cursor.new( 2, 5 ) }
-
-for i = 1, #lines do
-	states[i] = {}
-end
-
-text_editor.write( lines, { lines = flines, states = states, formatter = function(v) return v end }, cursors, "A", true )
 
 return text_editor

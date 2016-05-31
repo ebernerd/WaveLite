@@ -30,4 +30,32 @@ function util.splitlines( text )
 	return lines
 end
 
+function util.lookup_style( style, index )
+	local parts = {}
+	for part in index:gmatch "[^%.]+" do
+		parts[#parts + 1] = part
+	end
+	for n = #parts, 1, -1 do
+		local i = table.concat( parts, ".", 1, n )
+		if style[i] then return style[i] end
+	end
+	return style.default
+end
+
+function util.formatText( text )
+	return text:gsub( "\\", "\\\\" ):gsub( "{", "\\{" ):gsub( "}", "\\}" )
+end
+
+function util.isShiftHeld()
+	return love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift")
+end
+
+function util.isCtrlHeld()
+	return love.keyboard.isDown("lctrl") or love.keyboard.isDown("rctrl")
+end
+
+function util.isAltHeld()
+	return love.keyboard.isDown("lalt") or love.keyboard.isDown("ralt")
+end
+
 return util
