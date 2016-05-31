@@ -101,13 +101,14 @@ function editor.load()
 	}
 	editor.languages = {
 		lua = require "resources.languages.lua";
+		flux = require "resources.languages.flux"
 	}
 
 	editor.scroll_speed = 50
 	editor.scrollbar_size = 20
 	editor.scrollbar_padding = 4
 	editor.theme = editor.themes.Default
-	editor.lang = editor.languages.lua
+	editor.lang = editor.languages.flux
 	editor.font = love.graphics.newFont( "resources/fonts/Hack.ttf", 15 )
 	editor.tab_spacing = 4
 	editor.padding_left = 100
@@ -124,8 +125,44 @@ function editor.load()
 	editor.panel = UIPanel.main:add( UIPanel.new( editor.padding_left, editor.padding_top, editor.contentWidth, editor.contentHeight ) )
 	editor.panel.colour = editor.themes.Default._Background
 
-	function editor.panel:onDraw()
-		editor.draw()
+	editor.scrollbar_right = editor.panel:add( UIPanel.new( 0, 0, 0, 0 ) )
+	editor.scrollbar_bottom = editor.panel:add( UIPanel.new( 0, 0, 0, 0 ) )
+
+	editor.scrollbar_right.visible = false
+	editor.scrollbar_bottom.visible = false
+	editor.scrollbar_right.colour = editor.theme._ScrollbarSlider
+	editor.scrollbar_bottom.colour = editor.theme._ScrollbarSlider
+
+	function editor.scrollbar_right:onTouch(x, y)
+		self.anchor = y
+	end
+
+	function editor.scrollbar_right:onMove(x, y)
+		local isw, ish = getInternalScrollbarSize(editor)
+		local hsb, vsb = getRequiredScrollbars(editor, isw, ish)
+		local _, contentHeight = getActualDisplaySize( editor, hsb, vsb )
+		local dy = y - self.anchor
+
+		editor.scrollY = math.max( 0, math.min( editor.scrollY + dy * ish / contentHeight, ish - contentHeight ) )
+	end
+
+	function editor.scrollbar_bottom:onTouch(x, y)
+		self.anchor = x
+	end
+
+	function editor.scrollbar_bottom:onMove(x, y)
+		local isw, ish = getInternalScrollbarSize(editor)
+		local hsb, vsb = getRequiredScrollbars(editor, isw, ish)
+		local contentWidth, _ = getActualDisplaySize( editor, hsb, vsb )
+		local dx = x - self.anchor
+
+		editor.scrollX = math.max( 0, math.min( editor.scrollX + dx * isw / contentWidth, isw - contentWidth ) )
+	end
+
+	function editor.panel:onDraw(mode)
+		if mode == "before" then
+			editor.draw()
+		end
 	end
 
 	function editor.panel:onParentResized(parent)
@@ -210,15 +247,27 @@ function editor.draw()
 		if hsb then
 			love.graphics.setColor(editor.theme._ScrollbarTray)
 			love.graphics.rectangle( "fill", 0, contentHeight, contentWidth, editor.scrollbar_size )
-			love.graphics.setColor(editor.theme._ScrollbarSlider)
-			love.graphics.rectangle( "fill", sph, contentHeight + editor.scrollbar_padding, ssh, editor.scrollbar_size - 2 * editor.scrollbar_padding )
+			editor.scrollbar_bottom.visible = true
+			editor.scrollbar_bottom.x = sph
+			editor.scrollbar_bottom.y = contentHeight + editor.scrollbar_padding
+			editor.scrollbar_bottom.width = ssh
+			editor.scrollbar_bottom.height = editor.scrollbar_size - 2 * editor.scrollbar_padding
+			editor.scrollbar_bottom.colour = editor.theme._ScrollbarSlider
+		else
+			editor.scrollbar_bottom.visible = false
 		end
 
 		if vsb then
 			love.graphics.setColor(editor.theme._ScrollbarTray)
 			love.graphics.rectangle( "fill", contentWidth, 0, editor.scrollbar_size, contentHeight )
-			love.graphics.setColor(editor.theme._ScrollbarSlider)
-			love.graphics.rectangle( "fill", contentWidth + editor.scrollbar_padding, spv, editor.scrollbar_size - 2 * editor.scrollbar_padding, ssv )
+			editor.scrollbar_right.visible = true
+			editor.scrollbar_right.x = contentWidth + editor.scrollbar_padding
+			editor.scrollbar_right.y = spv
+			editor.scrollbar_right.width = editor.scrollbar_size - 2 * editor.scrollbar_padding
+			editor.scrollbar_right.height = ssv
+			editor.scrollbar_right.colour = editor.theme._ScrollbarSlider
+		else
+			editor.scrollbar_right.visible = false
 		end
 
 		love.graphics.translate( -editor.scrollX, -editor.scrollY )

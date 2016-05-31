@@ -12,7 +12,7 @@ end
 
 local function findRecursive( x, y, children )
 	for i = #children, 1, -1 do
-		if x >= children[i].x and y >= children[i].y and x < children[i].x + children[i].width and y < children[i].y + children[i].height then
+		if children[i].visible and x >= children[i].x and y >= children[i].y and x < children[i].x + children[i].width and y < children[i].y + children[i].height then
 			return findRecursive( x - children[i].x, y - children[i].y, children[i].children ) or children[i]
 		end
 	end
@@ -28,6 +28,7 @@ local function newUIPanel( x, y, width, height )
 	panel.height = height
 	panel.parent = nil
 	panel.children = {}
+	panel.visible = true
 
 	panel.colour = { 240, 240, 240 }
 
@@ -59,7 +60,9 @@ local function newUIPanel( x, y, width, height )
 
 			self:onDraw "before"
 			for i = 1, #self.children do
-				self.children[i]:draw( x + self.x, y + self.y )
+				if self.children[i].visible then
+					self.children[i]:draw( x + self.x, y + self.y )
+				end
 			end
 			self:onDraw "after"
 		love.graphics.pop()

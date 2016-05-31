@@ -59,7 +59,7 @@ local function longestOf( text, position, a, b, c, d, A, B, C, D )
 end
 
 local function formatText( text )
-	return text:gsub( "\\", "\\\\" ):gsub( "{", "\\{" )
+	return text:gsub( "\\", "\\\\" ):gsub( "{", "\\{" ):gsub( "}", "\\}" )
 end
 
 local function lookupIndexInStyle(index, style)
@@ -99,6 +99,7 @@ local function renderText(text, style, x, y)
 			escaped = true
 			i = i + 1
 		else
+			escaped = false
 			tstack[#tstack] = tstack[#tstack] .. text:sub( i, i )
 			i = i + 1
 		end
