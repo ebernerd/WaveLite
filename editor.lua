@@ -108,7 +108,7 @@ function editor.load()
 	editor.scrollbar_size = 20
 	editor.scrollbar_padding = 4
 	editor.theme = editor.themes.Default
-	editor.lang = editor.languages.flux
+	editor.lang = editor.languages.lua
 	editor.font = love.graphics.newFont( "resources/fonts/Hack.ttf", 15 )
 	editor.tab_spacing = 4
 	editor.padding_left = 100
