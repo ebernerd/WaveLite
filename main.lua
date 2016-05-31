@@ -3,6 +3,7 @@ local editor = require "src.editor"
 local UIPanel = require "src.UIPanel"
 
 function love.load()
+	love.keyboard.setKeyRepeat( true )
 	editor.load()
 end
 

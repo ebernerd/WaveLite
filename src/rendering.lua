@@ -17,13 +17,4 @@ function rendering.formatted_text_line( blocks, style, x, y )
 
 end
 
-function rendering.formatted_text_lines( lines, style, x, y )
-
-	for i = 1, #lines do
-		rendering.formatted_text_line( formatting.parse( lines[i] ), style, x, y )
-		y = y + style.font:getHeight()
-	end
-
-end
-
 return rendering

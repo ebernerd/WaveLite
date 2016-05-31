@@ -15,9 +15,9 @@ function text_editor.write( lines, formatting, ordered_cursors, text, text_assig
 	for i = 1, #ordered_cursors do
 		local newlines = one_line_per_cursor and { _newlines[i] } or _newlines
 		local min, max = cursor.order(ordered_cursors[i].position, ordered_cursors[i].selection)
-		local linediff = (max and (max[1] - min[1]) or 0) + #newlines - 1
+		local linediff = (max and (min[1] - max[1]) or 0) + #newlines - 1
 		local chardiff = #newlines == 1 and (max and max[2] or min[2]) - min[2] + #newlines[1] or #newlines[#newlines] - min[2] + 1
-		local new_position = { min[1] + linediff, #newlines == 1 and min[2] + #newlines[1] or #newlines[#newlines] + 1 }
+		local new_position = { min[1] + #newlines - 1, #newlines == 1 and min[2] + #newlines[1] or #newlines[#newlines] + 1 }
 
 		for n = i + 1, #ordered_cursors do
 			local a, b = ordered_cursors[n].position, ordered_cursors[n].selection
@@ -36,11 +36,15 @@ function text_editor.write( lines, formatting, ordered_cursors, text, text_assig
 		end
 
 		if max then
-			lines[min[1]] = lines[min[1]] .. lines[max[1]]:sub( max[2] - 1 )
-			for l = min[1] + 1, max[1] do
-				table.remove( lines, min[1] + 1 )
-				table.remove( flines, min[1] + 1 )
-				table.remove( fstate, min[1] + 1 )
+			if min[1] == max[1] then
+				lines[min[1]] = lines[min[1]]:sub( 1, min[2] - 1 ) .. lines[max[1]]:sub( max[2] )
+			else
+				lines[min[1]] = lines[min[1]]:sub( 1, min[2] - 1 ) .. lines[max[1]]:sub( max[2] )
+				for l = min[1] + 1, max[1] do
+					table.remove( lines, min[1] + 1 )
+					table.remove( flines, min[1] + 1 )
+					table.remove( fstate, min[1] + 1 )
+				end
 			end
 		end
 
@@ -60,7 +64,7 @@ function text_editor.write( lines, formatting, ordered_cursors, text, text_assig
 			end
 		end
 
-		format.format( lines, formatting, min[1], min[1] + linediff - 1 )
+		format.format( lines, formatting, min[1], min[1] + #newlines - 1 )
 
 	end
 

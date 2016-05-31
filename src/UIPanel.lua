@@ -13,7 +13,21 @@ end
 local function findRecursive( x, y, children )
 	for i = #children, 1, -1 do
 		if children[i].visible and x >= children[i].x and y >= children[i].y and x < children[i].x + children[i].width and y < children[i].y + children[i].height then
-			return findRecursive( x - children[i].x, y - children[i].y, children[i].children ) or children[i]
+			local child = findRecursive( x - children[i].x, y - children[i].y, children[i].children ) or children[i].enable_mouse and children[i]
+			if child then
+				return child
+			end
+		end
+	end
+end
+
+local function findKeyRecursive( children )
+	for i = #children, 1, -1 do
+		if children[i].visible then
+			local child = findKeyRecursive( children[i].children ) or children[i].enable_keyboard and children[i]
+			if child then
+				return child
+			end
 		end
 	end
 end
@@ -29,6 +43,8 @@ local function newUIPanel( x, y, width, height )
 	panel.parent = nil
 	panel.children = {}
 	panel.visible = true
+	panel.enable_keyboard = false
+	panel.enable_mouse = true
 
 	panel.colour = { 240, 240, 240 }
 
@@ -107,6 +123,18 @@ local function newUIPanel( x, y, width, height )
 
 	end
 
+	function panel:onKeypress( key )
+
+	end
+
+	function panel:onKeyrelease( key )
+
+	end
+
+	function panel:onTextInput( text )
+
+	end
+
 	function panel:resize( w, h )
 		if w ~= self.width or h ~= self.height then
 			self.width, self.height = w, h
@@ -155,8 +183,35 @@ function main:onMove( x, y )
 	end
 end
 
+function main:onKeypress( key )
+	local child = findKeyRecursive( self.children )
+
+	if child then
+		child:onKeypress( key )
+	end
+end
+
+function main:onKeyrelease( key )
+	local child = findKeyRecursive( self.children )
+
+	if child then
+		child:onKeyrelease( key )
+	end
+end
+
+function main:onTextInput( key )
+	local child = findKeyRecursive( self.children )
+
+	if child then
+		child:onTextInput( key )
+	end
+end
+
 local body = main:add( newUIPanel( 0, 0, 0, 0 ) )
 local popup = main:add( newUIPanel( 0, 0, 0, 0 ) )
+
+body.enable_mouse = false
+popup.enable_mouse = false
 
 function body:onDraw() end
 function popup:onDraw() end
