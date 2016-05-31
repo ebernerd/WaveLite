@@ -1,22 +1,163 @@
---[[
-newTextBody(string text)
-- creates a new text object with the given starting text
-- note: use :format() once created
-:format(int i = 1, int j = #lines)
-- updates the formatting on the range of lines given
-:insert(int n, string line)
-- inserts a new line and updates formatting
-:remove(int n)
-- removes a ling and updates formatting
-:set(int n, string line)
-- updates a line to a new value and updates the formatting
-:get(int n)
-- returns the raw line
-:getFormatted(int n)
-- returns the formatted line
-:formatLine(table state, string line)
-- (callback) returns a formatted string for that line
-]]
+
+local START_TEXT_LOOK_AT_START_OF_FILE = [==[
+-- Aha, I see you're looking at this?
+
+print "I changed the syntax highlighting style"
+
+if style.better() then
+	print 'Great!'
+else
+	print [=[ I'm so sorry ]]: ]=]
+end
+
+--[=[
+	now for some [[nested]] comments
+	yeah they work fine
+]=]
+
+print( 5 > 2 and true or false )
+]==]
+
+local function rgb( n )
+	return { math.floor( n / 256 ^ 2 ) % 256, math.floor( n / 256 ) % 256, n % 256 }
+end
+
+local themes = {
+	Default = {
+		Keyword = {
+			Loop = {
+				_Default = rgb( 0xc53d67 );
+			};
+			Function = {
+				_Default = rgb( 0xc53d67 );
+			};
+			Declare = {
+				_Default = rgb( 0xc53d67 );
+			};
+			Control = {
+				_Default = rgb( 0xc53d67 );
+			};
+			_Default = rgb( 0xc53d67 );
+		},
+		Operator = {
+			_Default = { 121, 250, 70 };
+		},
+		Constant = {
+			_Default = { 40, 40, 40 };
+			Identifier = rgb( 0x404040 );
+			Boolean = rgb( 0xed912c );
+			Number = rgb( 0x3092c6 );
+			String = rgb( 0x3092c6 );
+		},
+		Operator = {
+			_Default = rgb( 0xc53d67 );
+		};
+		Symbol = {
+			_Default = rgb( 0xc53d67 );
+		},
+		Comment = {
+			_Default = rgb( 0x919d9f );
+		},
+
+		_Default = rgb( 0x404040 ),
+		_Background = rgb( 0xfafafa );
+	}
+}
+
+local languages = {
+	lua = {
+		keywords = {
+			["if"] = "Keyword.Control.If";
+			["else"] = "Keyword.Control.Else";
+			["elseif"] = "Keyword.Control.Elseif";
+
+			["repeat"] = "Keyword.Loop.Repeat";
+			["while"] = "Keyword.Loop.While";
+
+			["for"] = "Keyword.Loop.For";
+			["in"] = "Keyword";
+
+			["and"] = "Operator.And";
+			["or"] = "Operator.Or";
+			["not"] = "Operator.Not";
+
+			["break"] = "Keyword.Control.Break";
+			["return"] = "Keyword.Control.Return";
+
+			["do"] = "Keyword";
+			["then"] = "Keyword";
+			["until"] = "Keyword";
+			["end"] = "Keyword.Control";
+
+			["function"] = "Keyword.Function";
+
+			["local"] = "Keyword.Declare";
+
+			["true"] = "Constant.Boolean";
+			["false"] = "Constant.Boolean";
+			["nil"] = "Constant.Null";
+		};
+
+		symbols = {
+			["="] = "Symbol";
+
+			["["] = "Symbol.Bracket.Square";
+			["]"] = "Symbol.Bracket.Square";
+			["("] = "Symbol.Bracket.Round";
+			[")"] = "Symbol.Bracket.Round";
+			["{"] = "Symbol.Bracket.Curly";
+			["}"] = "Symbol.Bracket.Curly";
+
+			["+"] = "Operator.Math.Add";
+			["-"] = "Operator.Math.Sub";
+			["*"] = "Operator.Math.Mul";
+			["/"] = "Operator.Math.Div";
+			["%"] = "Operator.Math.Mod";
+			["^"] = "Operator.Math.Pow";
+
+			["=="] = "Operator.Compare.Eq";
+			["~="] = "Operator.Compare.Neq";
+			[">="] = "Operator.Compare.Gte";
+			["<="] = "Operator.Compare.Lte";
+			[">"] = "Operator.Compare.Gt";
+			["<"] = "Operator.Compare.Lt";
+
+			["#"] = "Operator.Len";
+
+			["."] = "Symbol.Index";
+			[":"] = "Symbol.Index";
+
+			[","] = "Symbol.Sep";
+			[";"] = "Symbol.Sep";
+		};
+
+		comments = {
+			start = {
+				line = "%-%-";
+				multiline = "%-%-%[(=*)%[";
+			};
+			finish = {
+				line = "$";
+				multiline = "%]%1%]";
+			};
+		};
+
+		strings = {
+			start = {
+				line = "[\"\']";
+				multiline = "%[(=*)%[";
+			};
+			finish = {
+				line = "%1";
+				multiline = "%]%1%]";
+			};
+			escape = {
+				line = "\\";
+				multiline = nil;
+			};
+		};
+	}
+}
 
 local function copyt( t )
 	local t2 = {}
@@ -35,22 +176,76 @@ local function comparet( a, b )
 	end
 end
 
+local function findEndingMatch( text, initial, final, escape, position )
+	if not final then error("hey", 2)end
+	local escaped = false
+	local close = "^" .. initial:gsub( "^(.*)$", final )
+	local esc = escape and "^" .. initial:gsub( "^(.*)$", escape )
+
+	while position <= #text + 1 do
+		if escaped then
+			escaped = false
+		elseif escape and text:find( esc, position ) then
+			position = select( 2, text:find( esc, position ) )
+			escaped = true
+		else
+			local s, f = text:find( close, position )
+			if s then
+				return f
+			end
+		end
+
+		position = position + 1
+	end
+end
+
+local function longestOf( text, position, a, b, c, d, A, B, C, D )
+	local t = {
+		{ a, text:match( "^" .. a:gsub( "%(", "" ):gsub( "%)", "" ), position ) };
+		{ b, text:match( "^" .. b:gsub( "%(", "" ):gsub( "%)", "" ), position ) };
+		{ c, text:match( "^" .. c:gsub( "%(", "" ):gsub( "%)", "" ), position ) };
+		{ d, text:match( "^" .. d:gsub( "%(", "" ):gsub( "%)", "" ), position ) };
+	}
+	local l = -1
+	local n = 0
+
+	for i = 1, #t do
+		if t[i][2] and #t[i][2] > l then
+			n = i
+		end
+	end
+
+	return n > 0 and text:match( "^" .. t[n][1], position ), n > 0 and ({A, B, C, D})[n]
+end
+
+local function formatText( text )
+	return text:gsub( "\\", "\\\\" ):gsub( "{", "\\{" )
+end
+
+local function lookupIndexInStyle(index, style)
+	for part in index:gmatch "[^%.]+" do
+		style = style[part] or style._Default or style
+	end
+	return style._Default or style
+end
+
 local function newTextBody(text)
 
 	local t = {}
+	local lines = { "" }
 
-	local lines = {}
-
-	for line in text:gmatch "[^\n]*" do
-		lines[#lines + 1] = line
+	for i = 1, #text do
+		if text:sub( i, i ) == "\n" then
+			lines[#lines + 1] = ""
+		else
+			lines[#lines] = lines[#lines] .. text:sub( i, i )
+		end
 	end
 
-	if not t.state then
-		t.state = {}
-	end
+	t.state = {}
 	t.lines = lines
 	t.fmtlines = {}
-	t.states = { [0] = t.state }
+	t.states = setmetatable( { [0] = t.state }, { __index = function(t, i) return t[i-1] end } )
 
 	function t:format( i, upper )
 		upper = upper or i or #self.lines
@@ -59,9 +254,9 @@ local function newTextBody(text)
 		while i <= upper and i <= #self.lines do
 
 			local state = copyt( self.states[i - 1] ) -- this is for keeping track of things like (isInClass) to highlight keywords like 'super', 'private', etc
-			self.fmtlines[i] = self:formatLine( state, self.lines[i] or "" )
+			self.fmtlines[i] = self:formatLine( state, self.lines[i] )
 
-			if i == upper and comparet( state, self.states[i] or {} ) then -- if the line caused the next to have a changed state
+			if i == upper and comparet( state, self.states[i] ) then -- if the line caused the next to have a changed state
 				upper = upper + 1
 			end
 
@@ -102,195 +297,11 @@ local function newTextBody(text)
 	end
 
 	function t:formatLine( state, line )
-		return line -- with fancy text formatting
+		return formatText( line ) -- with fancy text formatting
 	end
 
 	return t
 
-end
-
-editor = { }
-
-local themes = {
-	Default = {
-		Keyword = {
-			Loop = {
-				_Default = { 255, 0, 0 },
-			},
-			Bool = {
-				_Default = { 0, 255, 0 },
-			},
-			Function = {
-				_Default = { 48, 163, 201 }
-			},
-			Declare = {
-				_Default = { 201, 76, 48 },
-			},
-			Control = {
-				_Default = { 201, 48, 156 },
-			},
-			_Default = { 48, 201, 84 },
-		},
-		Operator = {
-			_Default = { 121, 250, 70 }
-		},
-		Contstant = {
-			_Default = { 250, 70, 230 }
-		},
-		Symbol = {
-			_Default = { 40, 40, 40 }
-		},
-		Comment = {
-			_Default = { 140, 140, 140 }
-		},
-		String = {
-			_Default = { 230, 172, 16 }
-		},
-
-		_Default = { 40, 40, 40 },
-		_Background = { 230, 230, 230 }
-	}
-}
-
-local languages = {}
-
-local lang_lua = {
-	keywords = {
-		["if"] = "Keyword.Control.If";
-		["else"] = "Keyword.Control.Else";
-		["elseif"] = "Keyword.Control.Elseif";
-
-		["repeat"] = "Keyword.Loop.Repeat";
-		["while"] = "Keyword.Loop.While";
-
-		["for"] = "Keyword.Loop.For";
-		["in"] = "Keyword";
-
-		["and"] = "Operator.And";
-		["or"] = "Operator.Or";
-		["not"] = "Operator.Not";
-
-		["break"] = "Keyword.Control.Break";
-		["return"] = "Keyword.Control.Return";
-
-		["do"] = "Keyword";
-		["then"] = "Keyword";
-		["until"] = "Keyword";
-		["end"] = "Keyword.Control";
-
-		["function"] = "Keyword.Function";
-
-		["local"] = "Keyword.Declare";
-
-		["true"] = "Constant.Boolean";
-		["false"] = "Constant.Boolean";
-		["nil"] = "Constant.Null";
-	};
-
-	symbols = {
-		["="] = "Symbol";
-
-		["["] = "Symbol.Bracket.Square";
-		["]"] = "Symbol.Bracket.Square";
-		["("] = "Symbol.Bracket.Round";
-		[")"] = "Symbol.Bracket.Round";
-		["{"] = "Symbol.Bracket.Curly";
-		["}"] = "Symbol.Bracket.Curly";
-
-		["+"] = "Operator.Math.Add";
-		["-"] = "Operator.Math.Sub";
-		["*"] = "Operator.Math.Mul";
-		["/"] = "Operator.Math.Div";
-		["%"] = "Operator.Math.Mod";
-		["^"] = "Operator.Math.Pow";
-
-		["=="] = "Operator.Compare.Eq";
-		["~="] = "Operator.Compare.Neq";
-		[">="] = "Operator.Compare.Gte";
-		["<="] = "Operator.Compare.Lte";
-		[">"] = "Operator.Compare.Gt";
-		["<"] = "Operator.Compare.Lt";
-
-		["#"] = "Operator.Len";
-
-		["."] = "Symbol.Index";
-		[":"] = "Symbol.Index";
-
-		[","] = "Symbol.Sep";
-		[";"] = "Symbol.Sep";
-	};
-
-	comments = {
-		start = {
-			line = "%-%-";
-			multiline = "%-%-%[(=*)%[";
-		};
-		finish = {
-			line = "\n";
-			multiline = "%]%1%]";
-		};
-	};
-
-	strings = {
-		start = {
-			line = "[\"\']";
-			multiline = "%[(=*)%[";
-		};
-		finish = {
-			line = "%1";
-			multiline = "%]%1%]";
-		};
-		escape = {
-			line = "\\";
-			multiline = nil;
-		};
-	};
-}
-
-local function findEndingMatch( text, initial, final, escape, position )
-	if not final then error("hey", 2)end
-	local escaped = false
-	local close = "^" .. initial:gsub( "^(.*)$", final )
-	local esc = escape and "^" .. initial:gsub( "^(.*)$", escape )
-
-	while position <= #text do
-		if escaped then
-			escaped = false
-		elseif escape and text:find( esc, position ) then
-			position = select( 2, text:find( esc, position ) )
-			escaped = true
-		else
-			local s, f = text:find( close, position )
-			if s then
-				return f
-			end
-		end
-
-		position = position + 1
-	end
-end
-
-local function longestOf( text, position, a, b, c, d, A, B, C, D )
-	local t = {
-		{ a, text:match( "^" .. a:gsub( "%(", "" ):gsub( "%)", "" ), position ) };
-		{ b, text:match( "^" .. b:gsub( "%(", "" ):gsub( "%)", "" ), position ) };
-		{ c, text:match( "^" .. c:gsub( "%(", "" ):gsub( "%)", "" ), position ) };
-		{ d, text:match( "^" .. d:gsub( "%(", "" ):gsub( "%)", "" ), position ) };
-	}
-	local l = 0
-	local n = 0
-
-	for i = 1, #t do
-		if t[i][2] and #t[i][2] > l then
-			n = i
-		end
-	end
-
-	return n > 0 and text:match( "^" .. t[n][1], position ), n > 0 and ({A, B, C, D})[n]
-end
-
-local function formatText( text )
-	return text:gsub( "\\", "\\\\" ):gsub( "{", "\\{" ):gsub( "}", "\\}" )
 end
 
 local function createLanguageFormatter(lang)
@@ -329,9 +340,6 @@ local function createLanguageFormatter(lang)
 				if ending then
 					res = res .. (sindex == "strings" and "{Constant.String:" or "{Comment:") .. formatText( line:sub( i, ending ) ) .. "}"
 					i = ending + 1
-				elseif fullindex == "comment_line" then
-					res = res .. (sindex == "strings" and "{Constant.String:" or "{Comment:") .. formatText( line:sub( i ) ) .. "}"
-					return res
 				else
 					state.in_section = fullindex
 					state.string_match = pat
@@ -372,11 +380,11 @@ local function createLanguageFormatter(lang)
 
 				if l > 0 then
 					res = res .. "{" .. v .. ":" .. formatText( line:sub( i, i + l - 1 ) ) .. "}"
+					i = i + l
 				else
 					res = res .. formatText( line:sub( i, i ) )
+					i = i + 1
 				end
-
-				i = i + 1
 			end
 		end
 
@@ -386,18 +394,6 @@ local function createLanguageFormatter(lang)
 		in_section = false;
 		string_match = "";
 	}
-end
-
-languages.lua = lang_lua
-
-editor.theme = themes.Default
-editor.lang = languages.lua
-
-local function lookupIndexInStyle(index, style)
-	for part in index:gmatch "[^%.]+" do
-		style = style[part] or style._Default or style
-	end
-	return style._Default or style
 end
 
 local function renderText(text, style, x, y)
@@ -434,22 +430,29 @@ local function renderText(text, style, x, y)
 
 	list[#list + 1] = { text = tstack[1], colour = cstack[1] }
 
-	for i =1, #list do
+	local font = love.graphics.getFont()
 
+	for i =1, #list do
 		love.graphics.setColor( list[i].colour )
 		love.graphics.print( list[i].text, x, y )
-
-		local font = love.graphics.getFont()
 		x = x + font:getWidth( list[i].text )
 	end
 end
 
+editor = { }
+
 function editor.load()
+	love.keyboard.setKeyRepeat(true)
+
+	editor.theme = themes.Default
+	editor.lang = languages.lua
 	editor.font = love.graphics.newFont( "resources/fonts/Hack.ttf", 15 )
+
+	editor.tab_spacing = 4
+
 	editor.files = {
 		[1] = {
-			text = newTextBody("", editor.lang),
-			lines = { [1] = "" },
+			text = newTextBody( START_TEXT_LOOK_AT_START_OF_FILE ),
 			cursor = {
 				char = 1,
 				line = 1,
@@ -457,62 +460,77 @@ function editor.load()
 			selection = 0
 		}
 	}
+
+	editor.c = {
+		v = true,
+		t = 0,
+	}
+
+	editor.workingfile = 1
+
 	local fmt, state = createLanguageFormatter(editor.lang)
 	local f = editor.files[1]
+
 	function f.text:formatLine(state, line)
 	      return fmt(state, line)
 	end
 	for k, v in pairs( state ) do
 	    f.text.state[k] = v
 	end
-	editor.c = {
-		v = true,
-		t = 0,
-	}
-	editor.workingfile = 1
+
 	editor.files[1].text:format()
 end
 
 function editor.update( dt )
 	editor.c.t = editor.c.t + dt
 	if editor.c.t > 0.5 then
-		editor.c.t = 0
+		editor.c.t = editor.c.t - 0.5
 		editor.c.v = not editor.c.v
 	end
 end
 
 function editor.draw()
+	local wf = editor.workingfile
+	local f = editor.files[wf]
+
 	love.graphics.setFont( editor.font )
 	love.graphics.setBackgroundColor( editor.theme._Background )
-	local f = editor.files[editor.workingfile]
 	love.graphics.setColor( 255, 255, 255 )
-	local wf = editor.workingfile
-	for i=1, #f.lines do
-		renderText( f.text:getFormatted(i), editor.theme, 100, 100+(i-1)*editor.font:getHeight())
-	end
-	love.graphics.print( "Col " .. f.cursor.char .. " | Line " .. f.cursor.line, 10, love.graphics.getHeight()-50)
+
 	if editor.c.v then
+		local line = f.text:get(f.cursor.line)
+		local font = editor.font
+
 		love.graphics.setColor( editor.theme._Default )
-		love.graphics.rectangle("fill", 100+(f.cursor.char-1)*editor.font:getWidth(" "), 100+(f.cursor.line-1)*editor.font:getHeight(), editor.font:getWidth(" "), editor.font:getHeight())
-		if f.cursor.char <= #f.text:get(f.cursor.line) then
-			love.graphics.setColor( editor.theme._Background )
-			love.graphics.print(f.text:get(f.cursor.line):sub(f.cursor.char, f.cursor.char), 100, 100+(f.cursor.line-1)*editor.font:getHeight())
-		end
+		love.graphics.rectangle("fill", 100+font:getWidth( line:sub( 1, f.cursor.char - 1 ):gsub("\t", (" "):rep( editor.tab_spacing))), 100+(f.cursor.line-1)*editor.font:getHeight(), editor.font:getWidth(" "), editor.font:getHeight())
 	end
+
+	for i=1, #f.text.lines do
+		local line = f.text:getFormatted(i):gsub( "\t", (" "):rep(editor.tab_spacing) )
+		renderText( line, editor.theme, 100, 100+(i-1)*editor.font:getHeight())
+	end
+
+	love.graphics.print( "Col " .. f.cursor.char .. " | Line " .. f.cursor.line, 10, love.graphics.getHeight()-50)
 end
 
 function editor.textinput( t )
+	local wf = editor.workingfile
+	local f = editor.files[wf]
+
 	editor.c.v = true
 	editor.c.t = 0
-	local f = editor.files[editor.workingfile]
-	f.text:set(f.cursor.line, f.text:get(f.cursor.line):sub(1, f.cursor.char-1) .. t .. f.text:get(f.cursor.line):sub(f.cursor.char, #f.text:get(f.cursor.line)) )
+
+	f.text:set(f.cursor.line, f.text:get(f.cursor.line):sub(1, f.cursor.char-1) .. t .. f.text:get(f.cursor.line):sub(f.cursor.char) )
 	f.cursor.char = f.cursor.char + 1
 end
 
 function editor.keypressed( key )
+	local wf = editor.workingfile
+	local f = editor.files[wf]
+
 	editor.c.v = true
 	editor.c.t = 0
-	f = editor.files[editor.workingfile]
+
 	if key == "backspace" then
 		if f.cursor.line > 1 then
 			if f.cursor.char > 0 then
@@ -532,17 +550,17 @@ function editor.keypressed( key )
 			f.cursor.char = #f.text:get(f.cursor.line)+1
 			f.text:set(f.cursor.line, f.text:get(f.cursor.line)..t)
 			f.text:remove(f.cursor.line+1)
-			table.remove( f.lines, f.cursor.line + 1)
 		end
 	elseif key == "return" then
 		--print(f.text:get(f.cursor.line), f.cursor.char, f.cursor.line, #f.text:get(f.cursor.line))
 		f.text:insert(f.cursor.line+1, f.text:get(f.cursor.line):sub(f.cursor.char, #f.text:get(f.cursor.line)))
 
-		table.insert( f.lines, f.cursor.line+1, f.text:get(f.cursor.line):sub(f.cursor.char, #f.text:get(f.cursor.line)))
-
 		f.text:set( f.cursor.line, f.text:get(f.cursor.line):sub(1, f.cursor.char))
 		f.cursor.line = f.cursor.line + 1
 		f.cursor.char = 1
+	elseif key == "tab" then
+		f.text:set(f.cursor.line, f.text:get(f.cursor.line):sub(1, f.cursor.char-1) .. "\t" .. f.text:get(f.cursor.line):sub(f.cursor.char) )
+		f.cursor.char = f.cursor.char + 1
 	elseif key == "up" then
 		if f.cursor.line > 1 then
 			if f.cursor.char == #f.text:get(f.cursor.line)+1 then
@@ -551,7 +569,7 @@ function editor.keypressed( key )
 			f.cursor.line = f.cursor.line - 1
 		end
 	elseif key == "down" then
-		if #f.lines >= f.cursor.line + 1 then
+		if #f.text.lines >= f.cursor.line + 1 then
 			f.cursor.line = f.cursor.line + 1
 			if f.cursor.char == #f.text:get(f.cursor.line-1)+1 then
 				f.cursor.char = #f.text:get(f.cursor.line)+1
@@ -570,7 +588,7 @@ function editor.keypressed( key )
 		if f.cursor.char <= #f.text:get(f.cursor.line) then
 			f.cursor.char = f.cursor.char + 1
 		else
-			if #f.lines > f.cursor.line then
+			if #f.text.lines > f.cursor.line then
 				f.cursor.char = 1
 				f.cursor.line = f.cursor.line + 1
 			end
