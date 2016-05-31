@@ -38,6 +38,8 @@ function editor.load()
 	editor.tab_spacing = 4
 	editor.padding_left = 100
 	editor.padding_top = 100
+	editor.wide_cursor = false
+	editor.cursor_width = 1
 
 	editor.files = {
 		[1] = {
@@ -57,6 +59,7 @@ function editor.load()
 
 	editor.workingfile = 1
 
+
 	local fmt, state = require "lib.LanguageFormatter" (editor.lang)
 	local f = editor.files[1]
 
@@ -68,6 +71,7 @@ function editor.load()
 	end
 
 	editor.files[1].text:format()
+	editor.files[1].cursors:addCursor( 1, 1 )
 end
 
 function editor.update( dt )
@@ -81,27 +85,29 @@ end
 function editor.draw()
 	local wf = editor.workingfile
 	local f = editor.files[wf]
+	local cline = f.cursors:getDrawableCursor( 1, f.text )[1]
+	local cchar = f.cursors:getDrawableCursor( 1, f.text )[2]
 
 	love.graphics.setFont( editor.font )
 	love.graphics.setBackgroundColor( editor.theme._Background )
 	love.graphics.setColor( 255, 255, 255 )
 
 	if editor.cursor.visible then
-		local line = f.text:get(f.cursor.line)
+		local line = f.text:get(cline)
 		local font = editor.font
-		local x = editor.padding_left + font:getWidth( line:sub( 1, f.cursor.char - 1 ):gsub("\t", (" "):rep( editor.tab_spacing ) ) )
-		local y = editor.padding_top + ( f.cursor.line - 1 ) * editor.font:getHeight()
+		local x = editor.padding_left + font:getWidth( line:sub( 1, cchar - 1 ):gsub("\t", (" "):rep( editor.tab_spacing ) ) )
+		local y = editor.padding_top + ( cline - 1 ) * editor.font:getHeight()
 
 		love.graphics.setColor( editor.theme._Default )
-		love.graphics.rectangle( "fill", x, y, editor.font:getWidth(" "), editor.font:getHeight() )
+		love.graphics.rectangle( "fill", x, y, editor.wide_cursor and editor.font:getWidth(" ") or editor.cursor_width, editor.font:getHeight() )
 	end
 
-	for i=1, #f.text.lines do
+	for i = 1, #f.text.lines do
 		local line = f.text:getFormatted(i):gsub( "\t", (" "):rep(editor.tab_spacing) )
-		util.renderText( line, editor.theme, 100, 100+(i-1)*editor.font:getHeight())
+		util.renderText( line, editor.theme, editor.padding_left, editor.padding_top + (i-1) * editor.font:getHeight())
 	end
 
-	love.graphics.print( "Col " .. f.cursor.char .. " | Line " .. f.cursor.line, 10, love.graphics.getHeight()-50)
+	love.graphics.print( "Col " .. cchar .. " | Line " .. cline, 10, love.graphics.getHeight()-50)
 end
 
 function editor.textinput( t )
@@ -111,8 +117,7 @@ function editor.textinput( t )
 	editor.cursor.visible = true
 	editor.cursor.timer = 0
 
-	f.text:write( t, {f.cursor.line, f.cursor.char} )
-	f.cursor.char = f.cursor.char + 1
+	f.cursors:setCursor( 1, f.text:write( t, f.cursors:getDrawableCursor( 1, f.text ) ) )
 end
 
 function editor.keypressed( key )
@@ -123,67 +128,26 @@ function editor.keypressed( key )
 	editor.cursor.timer = 0
 
 	if key == "backspace" then
-		if f.cursor.line > 1 then
-			if f.cursor.char > 0 then
-				f.cursor.char = f.cursor.char - 1
-			end
-			f.text:set(f.cursor.line, f.text:get(f.cursor.line):sub(1, f.cursor.char-1) .. f.text:get(f.cursor.line):sub(f.cursor.char+1, #f.text:get(f.cursor.line)))
-		else
-			if f.cursor.char > 1 then
-				f.cursor.char = f.cursor.char - 1
-			end
+		f.cursors:setCursor( 1, f.text:backspace( f.cursors:getDrawableCursor( 1, f.text ) ) )
 
-			f.text:set(f.cursor.line, f.text:get(f.cursor.line):sub(1, f.cursor.char-1) .. f.text:get(f.cursor.line):sub(f.cursor.char+1, #f.text:get(f.cursor.line)))
-		end
-		if f.cursor.char == 0 and f.cursor.line > 1 then
-			local t = f.text:get(f.cursor.line)
-			f.cursor.line = f.cursor.line - 1
-			f.cursor.char = #f.text:get(f.cursor.line)+1
-			f.text:set(f.cursor.line, f.text:get(f.cursor.line)..t)
-			f.text:remove(f.cursor.line+1)
-		end
 	elseif key == "return" then
-		--print(f.text:get(f.cursor.line), f.cursor.char, f.cursor.line, #f.text:get(f.cursor.line))
-		f.text:insert(f.cursor.line+1, f.text:get(f.cursor.line):sub(f.cursor.char, #f.text:get(f.cursor.line)))
+		f.cursors:setCursor( 1, f.text:write( "\n", f.cursors:getDrawableCursor( 1, f.text ) ) )
 
-		f.text:set( f.cursor.line, f.text:get(f.cursor.line):sub(1, f.cursor.char))
-		f.cursor.line = f.cursor.line + 1
-		f.cursor.char = 1
 	elseif key == "tab" then
-		f.text:set(f.cursor.line, f.text:get(f.cursor.line):sub(1, f.cursor.char-1) .. "\t" .. f.text:get(f.cursor.line):sub(f.cursor.char) )
-		f.cursor.char = f.cursor.char + 1
+		f.cursors:setCursor( 1, f.text:write( "\t", f.cursors:getDrawableCursor( 1, f.text ) ) )
+
 	elseif key == "up" then
-		if f.cursor.line > 1 then
-			if f.cursor.char == #f.text:get(f.cursor.line)+1 then
-				f.cursor.char = #f.text:get(f.cursor.line-1)+1
-			end
-			f.cursor.line = f.cursor.line - 1
-		end
+		f.cursors:setCursor( 1, f.cursors:getLocationUp( 1, f.text ) )
+
 	elseif key == "down" then
-		if #f.text.lines >= f.cursor.line + 1 then
-			f.cursor.line = f.cursor.line + 1
-			if f.cursor.char == #f.text:get(f.cursor.line-1)+1 then
-				f.cursor.char = #f.text:get(f.cursor.line)+1
-			elseif f.cursor.char >= #f.text:get(f.cursor.line)+1 then
-				f.cursor.char = #f.text:get(f.cursor.line)+1
-			end
-		end
+		f.cursors:setCursor( 1, f.cursors:getLocationDown( 1, f.text ) )
+
 	elseif key == "left" then
-		if f.cursor.char == 1 and f.cursor.line > 1 then
-			f.cursor.line = f.cursor.line -1
-			f.cursor.char = #f.text:get(f.cursor.line)+1
-		else
-			f.cursor.char = f.cursor.char-1
-		end
+		f.cursors:setCursor( 1, f.cursors:getLocationLeft( 1, f.text ) )
+
 	elseif key == "right" then
-		if f.cursor.char <= #f.text:get(f.cursor.line) then
-			f.cursor.char = f.cursor.char + 1
-		else
-			if #f.text.lines > f.cursor.line then
-				f.cursor.char = 1
-				f.cursor.line = f.cursor.line + 1
-			end
-		end
+		f.cursors:setCursor( 1, f.cursors:getLocationRight( 1, f.text ) )
+
 	end
 end
 

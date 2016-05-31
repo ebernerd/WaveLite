@@ -54,6 +54,38 @@ local function newTextBody(text)
 
 		self:format( start[1], start[1] + #lines - 1 )
 
+		if #lines == 1 then
+			return {start[1], start[2] + #text}
+		else
+			return {start[1] + #lines - 1, #lines[#lines] + 1}
+		end
+
+	end
+
+	function t:backspace( start, finish )
+		if finish then
+			return self:write( "", start, finish )
+		else
+			if start[2] == 1 then
+				if start[1] > 1 then
+					local char = #self.lines[start[1] - 1] + 1
+					
+					self.lines[start[1] - 1] = self.lines[start[1] - 1] .. self.lines[start[1]]
+					
+					table.remove( self.lines, start[1] )
+					table.remove( self.fmtlines, start[1] )
+					table.remove( self.states, start[1] )
+
+					self:format( start[1] - 1 )
+
+					return {start[1] - 1, char}
+				end
+			else
+				self.lines[start[1]] = self.lines[start[1]]:sub( 1, start[2] - 2 ) .. self.lines[start[1]]:sub( start[2] )
+				self:format( start[1] )
+				return {start[1], start[2] - 1}
+			end
+		end
 	end
 
 	function t:format( i, upper )
