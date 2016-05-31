@@ -29,7 +29,7 @@ local function newTextBody(text)
 		if finish then
 			-- remove old text
 			self.lines[start[1]] = self.lines[start[1]]:sub( 1, start[2] - 1 ) .. self.lines[finish[1]]:sub( finish[2] )
-			for i = start[1] + 1, finish[1] do
+			for i = finish[1], start[1] + 1, -1 do
 				table.remove( self.lines, i )
 				table.remove( self.fmtlines, i )
 				table.remove( self.states, i )

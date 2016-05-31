@@ -15,7 +15,7 @@ local function newCursorSystem()
 		if t then
 			self.cursors[cursor] = { cursor = t, selection = keepSelection and (self.cursors[cursor].selection or self.cursors[cursor].cursor) or false }
 		else
-			self.cursors = { cursor }
+			self.cursors = { { cursor = cursor, selection = false } }
 		end
 	end
 
@@ -23,8 +23,8 @@ local function newCursorSystem()
 		self.cursors[cursor].selection = t or false
 	end
 
-	function s:addCursor( line, character )
-		self.cursors[#self.cursors + 1] = { cursor = { line, character }, selection = false }
+	function s:addCursor( t )
+		self.cursors[#self.cursors + 1] = { cursor = t, selection = false }
 	end
 
 	function s:getCursor( cursor )
@@ -53,7 +53,7 @@ local function newCursorSystem()
 		local t = {}
 
 		for i = 1, #self.cursors do
-			t[i] = { n, self:order( self:getCursor( i ), self:getCursorSelection( i ) ) }
+			t[i] = { i, self:order( self:getCursor( i ), self:getCursorSelection( i ) ) }
 		end
 
 		table.sort( t, function( a, b ) return compare( a[2], b[2] ) end )
