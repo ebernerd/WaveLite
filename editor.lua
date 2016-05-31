@@ -20,9 +20,19 @@ end
 print( 5 > 2 and true or false )
 ]==]
 
+local function isShiftHeld()
+	return love.keyboard.isDown("lshift") or love.keyboard.isDown("rshift")
+end
+
+local function getLineLength( line, editor, n )
+	return #line:sub( 1, n ):gsub( "\t", (" "):rep(editor.tab_spacing) )
+end
+
 local editor = {}
 
 function editor.load()
+	local windowWidth, windowHeight = love.window.getMode()
+
 	love.keyboard.setKeyRepeat(true)
 
 	editor.themes = {
@@ -37,9 +47,15 @@ function editor.load()
 	editor.font = love.graphics.newFont( "resources/fonts/Hack.ttf", 15 )
 	editor.tab_spacing = 4
 	editor.padding_left = 100
+	editor.padding_right = 100
 	editor.padding_top = 100
+	editor.padding_bottom = 100
 	editor.wide_cursor = false
 	editor.cursor_width = 1
+	editor.scrollX = 0
+	editor.scrollY = 0
+	editor.contentWidth = windowWidth - editor.padding_left - editor.padding_right
+	editor.contentHeight = windowHeight - editor.padding_top - editor.padding_bottom
 
 	editor.files = {
 		[1] = {
@@ -83,31 +99,67 @@ function editor.update( dt )
 end
 
 function editor.draw()
+
+	local windowWidth, windowHeight = love.window.getMode()
 	local wf = editor.workingfile
 	local f = editor.files[wf]
-	local cline = f.cursors:getDrawableCursor( 1, f.text )[1]
-	local cchar = f.cursors:getDrawableCursor( 1, f.text )[2]
+	local cursor, selection = f.cursors:getDrawableCursor( 1, f.text )
+	local cline = cursor[1]
+	local cchar = cursor[2]
+	local sline = selection and selection[1]
+	local schar = selection and selection[2]
+	local tabs = (" "):rep( editor.tab_spacing )
+	local fontWidth = editor.font:getWidth " "
+	local fontHeight = editor.font:getHeight()
+	local ordered_cursors = f.cursors:getOrderedList()
+	local minline = math.floor( editor.scrollY / fontHeight ) + 1
+	local maxline = math.ceil( (editor.scrollY + editor.contentHeight) / fontHeight ) + 1
 
-	love.graphics.setFont( editor.font )
-	love.graphics.setBackgroundColor( editor.theme._Background )
-	love.graphics.setColor( 255, 255, 255 )
+	love.graphics.push() -- drawing the code content
+		love.graphics.setScissor( editor.padding_left - editor.scrollX, editor.padding_top - editor.scrollY, editor.contentWidth, editor.contentHeight )
+		love.graphics.translate( editor.padding_left - editor.scrollX, editor.padding_top - editor.scrollY )
+		love.graphics.setFont( editor.font )
+		love.graphics.setBackgroundColor( editor.theme._Background )
+		love.graphics.setColor( 180, 180, 180 )
+		love.graphics.rectangle( "line", 0, 0, editor.contentWidth, editor.contentHeight )
+		love.graphics.setColor( editor.theme._BackgroundSelected )
 
-	if editor.cursor.visible then
-		local line = f.text:get(cline)
-		local font = editor.font
-		local x = editor.padding_left + font:getWidth( line:sub( 1, cchar - 1 ):gsub("\t", (" "):rep( editor.tab_spacing ) ) )
-		local y = editor.padding_top + ( cline - 1 ) * editor.font:getHeight()
+		for i = minline, maxline do
+			while ordered_cursors[1] and (not ordered_cursors[1][3] or ordered_cursors[1][3][1] < i) do
+				table.remove( ordered_cursors, 1 ) -- remove cursors whose maximum value is above the line
+			end
 
-		love.graphics.setColor( editor.theme._Default )
-		love.graphics.rectangle( "fill", x, y, editor.wide_cursor and editor.font:getWidth(" ") or editor.cursor_width, editor.font:getHeight() )
-	end
+			if ordered_cursors[1] and ordered_cursors[1][2][1] <= i then
+				local start = ordered_cursors[1][2][1] == i
+					and fontWidth * getLineLength(f.text:get(i), editor, ordered_cursors[1][2][2] - 1) + 1
+					or 0
+				local finish = ordered_cursors[1][3][1] == i
+					and fontWidth * getLineLength(f.text:get(i), editor, ordered_cursors[1][3][2] - 1)
+					or fontWidth * (#f.text:get(i):gsub("\t", tabs ) + 1)
+				
+				love.graphics.rectangle( "fill", start, (i - 1) * fontHeight, finish - start, fontHeight )
+			end
+		end
 
-	for i = 1, #f.text.lines do
-		local line = f.text:getFormatted(i):gsub( "\t", (" "):rep(editor.tab_spacing) )
-		util.renderText( line, editor.theme, editor.padding_left, editor.padding_top + (i-1) * editor.font:getHeight())
-	end
+		if editor.cursor.visible then
+			local font = editor.font
+			local x = font:getWidth( f.text:get(cline):sub( 1, cchar - 1 ):gsub("\t", tabs ) )
+			local y = ( cline - 1 ) * editor.font:getHeight()
 
-	love.graphics.print( "Col " .. cchar .. " | Line " .. cline, 10, love.graphics.getHeight()-50)
+			love.graphics.setColor( editor.theme._Foreground )
+			love.graphics.rectangle( "fill", x, y, editor.wide_cursor and editor.font:getWidth(" ") or editor.cursor_width, editor.font:getHeight() )
+		end
+
+		for i = minline, maxline do
+			if f.text:get(i) then
+				util.renderText( f.text:getFormatted(i):gsub( "\t", tabs ), editor.theme, 0, (i-1) * fontHeight )
+			end
+		end
+
+		love.graphics.setScissor()
+
+	love.graphics.pop()
+	love.graphics.print( "Col " .. cchar .. " | Line " .. cline .. " | Selection " .. (sline and "Col " .. schar .. " | Selection Line " .. sline or "None"), 10, windowHeight - fontHeight - 20 )
 end
 
 function editor.textinput( t )
@@ -117,7 +169,7 @@ function editor.textinput( t )
 	editor.cursor.visible = true
 	editor.cursor.timer = 0
 
-	f.cursors:setCursor( 1, f.text:write( t, f.cursors:getDrawableCursor( 1, f.text ) ) )
+	f.cursors:setCursor( 1, f.text:write( t, f.cursors:order( f.cursors:getDrawableCursor( 1, f.text ) ) ) )
 end
 
 function editor.keypressed( key )
@@ -128,25 +180,28 @@ function editor.keypressed( key )
 	editor.cursor.timer = 0
 
 	if key == "backspace" then
-		f.cursors:setCursor( 1, f.text:backspace( f.cursors:getDrawableCursor( 1, f.text ) ) )
+		f.cursors:setCursor( 1, f.text:backspace( f.cursors:order( f.cursors:getDrawableCursor( 1, f.text ) ) ) )
+
+	elseif key == "delete" then
+		f.cursors:setCursor( 1, f.text:delete( f.cursors:order( f.cursors:getDrawableCursor( 1, f.text ) ) ) )
 
 	elseif key == "return" then
-		f.cursors:setCursor( 1, f.text:write( "\n", f.cursors:getDrawableCursor( 1, f.text ) ) )
+		f.cursors:setCursor( 1, f.cursors:order( f.text:write( "\n", f.cursors:getDrawableCursor( 1, f.text ) ) ) )
 
 	elseif key == "tab" then
-		f.cursors:setCursor( 1, f.text:write( "\t", f.cursors:getDrawableCursor( 1, f.text ) ) )
+		f.cursors:setCursor( 1, f.cursors:order( f.text:write( "\t", f.cursors:getDrawableCursor( 1, f.text ) ) ) )
 
 	elseif key == "up" then
-		f.cursors:setCursor( 1, f.cursors:getLocationUp( 1, f.text ) )
+		f.cursors:setCursor( 1, f.cursors:getLocationUp( 1, f.text ), isShiftHeld() )
 
 	elseif key == "down" then
-		f.cursors:setCursor( 1, f.cursors:getLocationDown( 1, f.text ) )
+		f.cursors:setCursor( 1, f.cursors:getLocationDown( 1, f.text ), isShiftHeld() )
 
 	elseif key == "left" then
-		f.cursors:setCursor( 1, f.cursors:getLocationLeft( 1, f.text ) )
+		f.cursors:setCursor( 1, f.cursors:getLocationLeft( 1, f.text ), isShiftHeld() )
 
 	elseif key == "right" then
-		f.cursors:setCursor( 1, f.cursors:getLocationRight( 1, f.text ) )
+		f.cursors:setCursor( 1, f.cursors:getLocationRight( 1, f.text ), isShiftHeld() )
 
 	end
 end

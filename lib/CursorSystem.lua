@@ -12,7 +12,11 @@ local function newCursorSystem()
 	s.cursors = {}
 
 	function s:setCursor( cursor, t, keepSelection )
-		self.cursors[cursor] = { cursor = t, selection = keepSelection and (self.cursors[cursor].selection or self.cursors[cursor].cursor) or false }
+		if t then
+			self.cursors[cursor] = { cursor = t, selection = keepSelection and (self.cursors[cursor].selection or self.cursors[cursor].cursor) or false }
+		else
+			self.cursors = { cursor }
+		end
 	end
 
 	function s:setCursorSelection( cursor, t )
@@ -31,15 +35,14 @@ local function newCursorSystem()
 		return self.cursors[cursor].selection
 	end
 
-	function s:getCursorBounds( cursor ) -- returns min, max of the two cursors
-		local c, s = self.cursors[cursor].cursor, self.cursors[cursor].selection
-		if s then
-			if compare(c, s) then
-				return s, c
-			end
-			return c, s
+	function s:order( a, b ) -- returns min, max of the two cursors
+		if not b then
+			return a
+		elseif compare( a, b ) then
+			return b, a
+		else
+			return a, b
 		end
-		return c
 	end
 
 	function s:getCursorCount()
@@ -50,7 +53,7 @@ local function newCursorSystem()
 		local t = {}
 
 		for i = 1, #self.cursors do
-			t[i] = { n, self:getCursorBounds( i ) }
+			t[i] = { n, self:order( self:getCursor( i ), self:getCursorSelection( i ) ) }
 		end
 
 		table.sort( t, function( a, b ) return compare( a[2], b[2] ) end )

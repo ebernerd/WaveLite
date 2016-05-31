@@ -38,7 +38,10 @@ return {
 		_Default = rgb( 0x919d9f );
 	},
 
-	_Default = rgb( 0x404040 ),
+	_Default = rgb( 0x404040 );
+	_Foreground = rgb( 0x404040 );
 	_Background = rgb( 0xfafafa );
+	_BackgroundSelected = rgb( 0xa0b0f0 );
+	_ForegroundSelected = rgb( 0xffffff );
 }
 	
