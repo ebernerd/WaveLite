@@ -1,13 +1,11 @@
-require "editor"
 
+local editor = require "editor"
 
 function love.load()
-
 	editor.load()
 end
 
 function love.update(dt)
-
 	editor.update( dt )
 end
 
@@ -28,7 +26,6 @@ function love.keyreleased(key)
 end
 
 function love.textinput(text)
-
 	editor.textinput( text )
 end
 
