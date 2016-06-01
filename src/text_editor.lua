@@ -50,10 +50,12 @@ function text_editor.write( lines, formatting, cursors, text, text_assigned_to_e
 			if j ~= i then -- since the writing cursor will be updated independently
 
 				if cursors[j].position[1] >= cursors[i].position[1] then -- if the cursor is after the editing one
-					cursors[j].position = { cursors[j].position[1] + textdiff, cursor.toLineChar( lines, cursors[j].position[1] + textdiff ) }
+					local c = cursor.new()
+					c.position = { cursors[j].position[1] + textdiff, cursor.toLineChar( lines, cursors[j].position[1] + textdiff ) }
 					if cursors[j].selection then
-						cursors[j].selection = { cursors[j].selection[1] + textdiff, cursor.toLineChar( lines, cursors[j].selection[1] + textdiff ) }
+						c.selection = { cursors[j].selection[1] + textdiff, cursor.toLineChar( lines, cursors[j].selection[1] + textdiff ) }
 					end
+					cursors[j] = c
 				end
 
 			end

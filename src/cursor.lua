@@ -68,12 +68,12 @@ function cursor.merge( cursors ) -- takes a {cursor}
 			local minI, maxI = cursor.order( cursors[i] )
 			local minN, maxN = cursor.order( cursors[n] )
 
-			if minI[1] <= maxN[1] and minN[1] <= maxI[1] then print(#cursors) print "done it"
+			if minI[1] <= maxN[1] and minN[1] <= maxI[1] then
 				local min = cursor.smaller( minI, minN )
 				local max = cursor .larger( maxI, maxN )
 				
 				cursors[n] = { position = min, selection = min[1] ~= max[1] and max or false }
-				table.remove( cursors, i ) print( #cursors )
+				table.remove( cursors, i )
 				break
 			end
 		end
