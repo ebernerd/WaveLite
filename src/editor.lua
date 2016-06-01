@@ -118,7 +118,7 @@ function editor.panel:onDraw(mode)
 
 			if max[2] >= i and min[2] <= i then
 				local start = min[2] == i and #tab.lines[i]:sub(1, min[3] - 1):gsub("\t", TABS) + 1 or 1
-				local finish = max[2] == i and #tab.lines[i]:sub(1, max[3] - 1):gsub("\t", TABS) + 1 or #tab.lines[i]:gsub("\t", TABS) + 1
+				local finish = max[2] == i and #tab.lines[i]:sub(1, max[3] - 1):gsub("\t", TABS) + 1 or #tab.lines[i]:gsub("\t", TABS) + 2
 				local x1, y1 = text_window.locationToPixels(start, i, font)
 				local x2, y2 = text_window.locationToPixels(finish, i, font)
 
@@ -155,6 +155,9 @@ function editor.panel:onDraw(mode)
 			rendering.formatted_text_line( formatting.parse( tab.formatting.lines[i] ), editor.tab().style, 0, (i-1) * font:getHeight() - tab.scrollX )
 		end
 	end
+
+	love.graphics.setColor( 0, 0, 0 )
+	love.graphics.print( #editor.tab().cursors .. "   " .. editor.tab().cursors[1].position[1] )
 end
 
 function editor.panel:onTouch( x, y )
@@ -167,6 +170,7 @@ function editor.panel:onTouch( x, y )
 	
 	if util.isCtrlHeld() then
 		tab.cursors[#tab.cursors + 1] = c
+		cursor.merge( tab.cursors )
 	else
 		tab.cursors = { c }
 	end
@@ -177,7 +181,7 @@ function editor.panel:onMove( x, y )
 	local char, line = text_window.pixelsToLocation( x + tab.scrollX, y + tab.scrollY, tab.style.font )
 	local pos = cursor.toPosition( tab.lines, line, char )
 
-	tab.cursors[#tab.cursors].selection = cursor.clamp( tab.lines, { pos, line, char } )
+	cursor.setSelection( tab.cursors[#tab.cursors], cursor.clamp( tab.lines, { pos, line, char } ) )
 	cursor.merge( tab.cursors )
 end
 
@@ -198,7 +202,7 @@ function editor.panel:onKeypress( key )
 				new.position = cursor[key]( tab.lines, tab.cursors[i].position )
 				tab.cursors[#tab.cursors + 1] = new
 			else
-				tab.cursors[i].selection = util.isShiftHeld() and (tab.cursors[i].selection or tab.cursors[i].position) or false
+				cursor.setSelection( tab.cursors[i], util.isShiftHeld() and (tab.cursors[i].selection or tab.cursors[i].position) or false )
 				tab.cursors[i].position = cursor[key]( tab.lines, tab.cursors[i].position )
 			end
 		end
@@ -215,6 +219,10 @@ function editor.panel:onKeypress( key )
 			end
 		end
 		text_editor.write( tab.lines, tab.formatting, tab.cursors, "", true )
+
+		for i = 1, #tab.cursors do
+			print( tab.cursors[i].position[1], tab.cursors[i].position[2], tab.cursors[i].position[3] )
+		end
 
 	elseif key == "delete" then
 		for i = 1, #tab.cursors do

@@ -5,6 +5,10 @@ function cursor.new()
 	return { position = { 1, 1, 1 }, selection = false }
 end
 
+function cursor.setSelection( c, s )
+	c.selection = s and s[1] ~= c.position[1] and s or false
+end
+
 function cursor.order( c ) -- takes a cursor
 	if c.selection then
 		local p_larger = c.position[1] > c.selection[1]
@@ -25,8 +29,19 @@ function cursor.sort( list )
 		return a.position[1] < b.position[1]
 	end )
 
-	-- debugging!
-	assert( not copy[2] or copy[1].position[1] <= copy[2].position[1], "swap the sorting function" )
+	return copy
+end
+
+function cursor.sort_reverse( list )
+	local copy = {}
+
+	for i = 1, #list do
+		copy[i] = list[i]
+	end
+
+	table.sort( copy, function( a, b )
+		return a.position[1] > b.position[1]
+	end )
 
 	return copy
 end
@@ -53,12 +68,12 @@ function cursor.merge( cursors ) -- takes a {cursor}
 			local minI, maxI = cursor.order( cursors[i] )
 			local minN, maxN = cursor.order( cursors[n] )
 
-			if minI[1] <= maxN[1] and minN[1] <= maxI[1] then print( "Merging a cursor bitches" )
+			if minI[1] <= maxN[1] and minN[1] <= maxI[1] then print(#cursors) print "done it"
 				local min = cursor.smaller( minI, minN )
 				local max = cursor .larger( maxI, maxN )
 				
 				cursors[n] = { position = min, selection = min[1] ~= max[1] and max or false }
-				table.remove( cursors, i )
+				table.remove( cursors, i ) print( #cursors )
 				break
 			end
 		end
@@ -68,9 +83,13 @@ end
 function cursor.toLineChar( lines, position )
 	local line = 1
 
-	while lines[line] and position > #lines[line] + 1 do
+	while position > #lines[line] + 1 do
 		position = position - (#lines[line] + 1)
-		line = line + 1
+		if lines[line + 1] then
+			line = line + 1
+		else
+			break
+		end
 	end
 
 	return line, math.min( position, #lines[line] + 1 )

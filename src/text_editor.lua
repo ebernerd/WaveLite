@@ -31,8 +31,7 @@ function text_editor.write( lines, formatting, cursors, text, text_assigned_to_e
 			lines[min[2]] = lines[min[2]]:sub( 1, min[3] - 1 ) .. newlines[1] .. lines[min[2]]:sub( min[3] )
 		else
 			local add_to_last_line = lines[min[2]]:sub( min[3] ) -- newlines[#newlines] should have the remainder of this line added on
-
-			print( min[3] )			
+		
 			lines[min[2]] = lines[min[2]]:sub( 1, min[3] - 1 ) .. newlines[1] -- the cursor line should be cut up to the cursor and have the first line added on
 
 			for i = 2, #newlines do
@@ -45,16 +44,16 @@ function text_editor.write( lines, formatting, cursors, text, text_assigned_to_e
 		end
 
 		-- update other cursor positions
-		local textdiff = one_line_per_cursor and #newlines[1] or #text - ( max[1] - min[1] )
+		local textdiff = (one_line_per_cursor and #newlines[1] or #text) - ( max[1] - min[1] )
 
 		for j = 1, #cursors do
 			if j ~= i then -- since the writing cursor will be updated independently
 
-				if cursors[j].position[1] > cursors[i].position[1] then -- if the cursor is after the editing one
-					cursors[j] = {
-						position = { cursors[j].position[1] + textdiff, cursor.toLineChar( lines, cursors[j].position[1] + textdiff ) };
-						selection = cursors[j].selection and { cursors[j].selection[1] + textdiff, cursor.toLineChar( lines, cursors[j].selection[1] + textdiff ) }
-					}
+				if cursors[j].position[1] >= cursors[i].position[1] then -- if the cursor is after the editing one
+					cursors[j].position = { cursors[j].position[1] + textdiff, cursor.toLineChar( lines, cursors[j].position[1] + textdiff ) }
+					if cursors[j].selection then
+						cursors[j].selection = { cursors[j].selection[1] + textdiff, cursor.toLineChar( lines, cursors[j].selection[1] + textdiff ) }
+					end
 				end
 
 			end
@@ -74,6 +73,10 @@ function text_editor.write( lines, formatting, cursors, text, text_assigned_to_e
 		end
 
 		format.format( lines, formatting, min[2], math.max( max[2], min[2] + #newlines - 1 ) )
+	end
+
+	if text == "" then
+		cursor.merge( cursors )
 	end
 
 end
