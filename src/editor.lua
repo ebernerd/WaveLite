@@ -111,7 +111,26 @@ function editor.panel:onDraw(mode)
 		local cursors_sorted = cursor.sort( cursors )
 		local i, n = minl, 1
 
-		love.graphics.setColor(40, 80, 255) -- change this!
+		if editor.cursor_blink.state and not editor.is_mouse_dragging then
+			love.graphics.setColor( 0, 0, 0 ) -- change this!
+
+			for i, c in ipairs( cursors ) do
+				local cpos = cursor.clamp( tab.lines, c.position )
+				local cx, cy = #tab.lines[cpos[2]]:sub(1, cpos[3] - 1):gsub( "\t", TABS ) + 1, cpos[2]
+				local x, y = text_window.locationToPixels( tab.lines, cx, cy, tab.style.font )
+
+				love.graphics.line( x, y, x, y + fontHeight )
+			end
+		end
+
+		love.graphics.setColor( 180, 180, 180 ) -- change this!
+		love.graphics.rectangle( "line", 0, 0, editor.getDisplayWidth(), editor.getDisplayHeight() )
+
+		for i = minl, maxl do
+			rendering.formatted_text_line( formatting.parse( tab.formatting.lines[i] ), editor.tab().style, 0, (i-1) * font:getHeight() - tab.scrollX )
+		end
+
+		love.graphics.setColor(80, 160, 255, 40) -- change this!
 
 		while i <= maxl and n <= #cursors_sorted do
 			local min, max = cursor.order( cursors_sorted[n] )
@@ -119,8 +138,8 @@ function editor.panel:onDraw(mode)
 			if max[2] >= i and min[2] <= i then
 				local start = min[2] == i and #tab.lines[i]:sub(1, min[3] - 1):gsub("\t", TABS) + 1 or 1
 				local finish = max[2] == i and #tab.lines[i]:sub(1, max[3] - 1):gsub("\t", TABS) + 1 or #tab.lines[i]:gsub("\t", TABS) + 2
-				local x1, y1 = text_window.locationToPixels(start, i, font)
-				local x2, y2 = text_window.locationToPixels(finish, i, font)
+				local x1, y1 = text_window.locationToPixels( tab.lines, start, i, font )
+				local x2, y2 = text_window.locationToPixels( tab.lines, finish, i, font )
 
 				love.graphics.rectangle( "fill", x1, y1, x2 - x1, fontHeight )
 
@@ -135,58 +154,58 @@ function editor.panel:onDraw(mode)
 				i = i + 1
 			end
 		end
-
-		if editor.cursor_blink.state then
-			love.graphics.setColor( 0, 0, 0 ) -- change this!
-
-			for i, c in ipairs( cursors ) do
-				local cpos = cursor.clamp( tab.lines, c.position )
-				local cx, cy = #tab.lines[cpos[2]]:sub(1, cpos[3] - 1):gsub( "\t", TABS ) + 1, cpos[2]
-				local x, y = text_window.locationToPixels( cx, cy, tab.style.font )
-
-				love.graphics.line( x, y, x, y + fontHeight )
-			end
-		end
-
-		love.graphics.setColor( 180, 180, 180 ) -- change this!
-		love.graphics.rectangle( "line", 0, 0, editor.getDisplayWidth(), editor.getDisplayHeight() )
-
-		for i = minl, maxl do
-			rendering.formatted_text_line( formatting.parse( tab.formatting.lines[i] ), editor.tab().style, 0, (i-1) * font:getHeight() - tab.scrollX )
-		end
 	end
-
-	love.graphics.setColor( 0, 0, 0 )
-	love.graphics.print( #editor.tab().cursors .. "   " .. editor.tab().cursors[1].position[1] )
 end
 
 function editor.panel:onTouch( x, y )
 	local tab = editor.tab()
-	local char, line = text_window.pixelsToLocation( x + tab.scrollX, y + tab.scrollY, tab.style.font )
+	local char, line = text_window.pixelsToLocation( tab.lines, x + tab.scrollX, y + tab.scrollY, tab.style.font )
 	local c = cursor.new()
 	local pos = cursor.toPosition( tab.lines, line, char )
+	local cursor_copy = {}
 
-	c.position = cursor.clamp( tab.lines, { pos, line, char } )
+	editor.cursor_copy = cursor_copy
+	editor.mouse_initial_location = cursor.clamp( tab.lines, { pos, line, char } )
+	editor.is_mouse_dragging = true
+
+	for i = 1, #tab.cursors do
+		cursor_copy[i] = tab.cursors[i]
+	end
+
+	c.position = editor.mouse_initial_location
 	
 	if util.isCtrlHeld() then
 		tab.cursors[#tab.cursors + 1] = c
-		cursor.merge( tab.cursors )
 	else
 		tab.cursors = { c }
+		editor.cursor_copy = {}
 	end
+
+	editor.resetCursorBlink()
 end
 
 function editor.panel:onMove( x, y )
 	local tab = editor.tab()
-	local char, line = text_window.pixelsToLocation( x + tab.scrollX, y + tab.scrollY, tab.style.font )
+	local char, line = text_window.pixelsToLocation( tab.lines, x + tab.scrollX, y + tab.scrollY, tab.style.font )
 	local pos = cursor.toPosition( tab.lines, line, char )
+	local c = cursor.new()
 
-	cursor.setSelection( tab.cursors[#tab.cursors], cursor.clamp( tab.lines, { pos, line, char } ) )
+	tab.cursors = {}
+
+	for i = 1, #editor.cursor_copy do
+		tab.cursors[i] = editor.cursor_copy[i]
+	end
+
+	tab.cursors[#tab.cursors + 1] = c
+
+	c.position = cursor.clamp( tab.lines, { pos, line, char } )
+	cursor.setSelection( c, editor.mouse_initial_location )
+
 	cursor.merge( tab.cursors )
 end
 
 function editor.panel:onRelease( x, y )
-
+	editor.is_mouse_dragging = false
 end
 
 function editor.panel:onKeypress( key )
@@ -202,8 +221,12 @@ function editor.panel:onKeypress( key )
 				new.position = cursor[key]( tab.lines, tab.cursors[i].position )
 				tab.cursors[#tab.cursors + 1] = new
 			else
-				cursor.setSelection( tab.cursors[i], util.isShiftHeld() and (tab.cursors[i].selection or tab.cursors[i].position) or false )
-				tab.cursors[i].position = cursor[key]( tab.lines, tab.cursors[i].position )
+				local pos = util.isShiftHeld() and (tab.cursors[i].selection or tab.cursors[i].position) or false
+				local c = cursor.new()
+
+				c.position = cursor[key]( tab.lines, tab.cursors[i].position )
+				cursor.setSelection( c, pos )
+				tab.cursors[i] = c
 			end
 		end
 		editor.resetCursorBlink()
@@ -220,10 +243,6 @@ function editor.panel:onKeypress( key )
 		end
 		text_editor.write( tab.lines, tab.formatting, tab.cursors, "", true )
 
-		for i = 1, #tab.cursors do
-			print( tab.cursors[i].position[1], tab.cursors[i].position[2], tab.cursors[i].position[3] )
-		end
-
 	elseif key == "delete" then
 		for i = 1, #tab.cursors do
 			if not tab.cursors[i].selection then
@@ -234,16 +253,23 @@ function editor.panel:onKeypress( key )
 
 	elseif key == "kp1" then
 		for i = 1, #tab.cursors do
-			tab.cursors[i].selection = false
-			tab.cursors[i].position[3] = math.huge
-			tab.cursors[i].position[1] = cursor.toPosition( tab.lines, tab.cursors[i].position[2], tab.cursors[i].position[3] )
+			local pos = util.isShiftHeld() and (tab.cursors[i].selection or tab.cursors[i].position) or false
+			local c = cursor.new()
+
+			c.position = { cursor.toPosition( tab.lines, tab.cursors[i].position[2], math.huge ), tab.cursors[i].position[2], math.huge }
+			cursor.setSelection( tab.cursors[i], pos )
+			tab.cursors[i] = c
 		end
+
 
 	elseif key == "kp7" then
 		for i = 1, #tab.cursors do
-			tab.cursors[i].selection = false
-			tab.cursors[i].position[3] = 1
-			tab.cursors[i].position[1] = cursor.toPosition( tab.lines, tab.cursors[i].position[2], tab.cursors[i].position[3] )
+			local pos = util.isShiftHeld() and (tab.cursors[i].selection or tab.cursors[i].position) or false
+			local c = cursor.new()
+
+			c.position = { cursor.toPosition( tab.lines, tab.cursors[i].position[2], 1 ), tab.cursors[i].position[2], 1 }
+			cursor.setSelection( tab.cursors[i], pos )
+			tab.cursors[i] = c
 		end
 
 	elseif key == "a" then
@@ -256,6 +282,38 @@ function editor.panel:onKeypress( key )
 
 	elseif key == "tab" then
 		text_editor.write( tab.lines, tab.formatting, tab.cursors, "\t", true )
+
+	elseif key == "v" then
+		if util.isCtrlHeld() then
+			text_editor.write( tab.lines, tab.formatting, tab.cursors, love.system.getClipboardText() )
+		end
+
+	elseif key == "c" then
+		if util.isCtrlHeld() then
+			local cursors = cursor.sort( tab.cursors )
+			local lines = {}
+
+			for i = 1, #cursors do
+				if cursors[i].selection then
+					local min, max = cursor.order( cursors[i] )
+					if min[2] == max[2] then
+						lines[#lines + 1] = tab.lines[min[2]]:sub( min[3], max[3] - 1 )
+					else
+						lines[#lines + 1] = tab.lines[min[2]]:sub( min[3] )
+
+						for n = min[2] + 1, max[2] - 1 do
+							lines[#lines + 1] = tab.lines[n]
+						end
+
+						lines[#lines + 1] = tab.lines[max[2]]:sub( 1, max[3] - 1 )
+					end
+				end
+			end
+
+			print( table.concat( lines, "\n" ) )
+
+			love.system.setClipboardText( table.concat( lines, "\n" ) )
+		end
 
 	end
 
