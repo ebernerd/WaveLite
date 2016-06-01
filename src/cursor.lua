@@ -1,78 +1,127 @@
 
 local cursor = {}
 
-function cursor.new( l, c )
-	return { position = l and ( type( l ) == "table" and l or { l, c } ) or { 1, 1 }, selection = false }
+function cursor.new()
+	return { position = { 1, 1, 1 }, selection = false }
 end
 
-function cursor.order( a, b )
-	if b then
-		local a_larger = a[1] > b[1] or a[1] == b[1] and a[2] > b[2]
-		return a_larger and b or a, a_larger and a or b
+function cursor.order( c ) -- takes a cursor
+	if c.selection then
+		local p_larger = c.position[1] > c.selection[1]
+		return p_larger and c.selection or c.position, p_larger and c.position or c.selection
 	else
-		return a
+		return c.position, c.position
 	end
 end
 
-function cursor.setSelection( c, s )
-	c.selection = s or false
-	return c
-end
+function cursor.sort( list )
+	local copy = {}
 
-function cursor.equal( a, b )
-	return a[1] == b[1] and a[2] == b[2]
-end
+	for i = 1, #list do
+		copy[i] = list[i]
+	end
 
-function cursor.smaller( a, b )
-	return a[1] < b[1] and a or a[1] == b[1] and a[2] < b[2] and a or b
-end
-
-function cursor.larger( a, b )
-	return a[1] < b[1] and b or a[1] == b[1] and a[2] < b[2] and b or a
-end
-
-function cursor.sort( cursor_list )
-	table.sort( cursor_list, function( A, B )
-		local a, b = cursor.order( A.position, A.selection ), cursor.order( B.position, B.selection )
-		return a[1] < b[1] or a[1] == b[1] and a[2] < b[2]
+	table.sort( copy, function( a, b )
+		return a.position[1] < b.position[1]
 	end )
 
-	return cursor_list
+	-- debugging!
+	assert( not copy[2] or copy[1].position[1] <= copy[2].position[1], "swap the sorting function" )
+
+	return copy
 end
 
-function cursor.merge( cursor_list ) -- TODO!
-	for i = #cursor_list - 1, 1, -1 do
-		local a, b = cursor_list[i], cursor_list[i + 1]
+function cursor.min( c ) -- takes a cursor
+	return c.selection and (c.position[1] < c.selection[1] and c.position or c.selection) or c.position
+end
+
+function cursor.max( c ) -- takes a cursor
+	return c.selection and (c.position[1] > c.selection[1] and c.position or c.selection) or c.position
+end
+
+function cursor.smaller( a, b ) -- takes two cursor positions
+	return a[1] < b[1] and a or b
+end
+
+function cursor.larger( a, b ) -- takes two cursor positions
+	return a[1] > b[1] and a or b
+end
+
+function cursor.merge( cursors ) -- takes a {cursor}
+	for i = #cursors, 1, -1 do
+		for n = i - 1, 1, -1 do
+			local minI, maxI = cursor.order( cursors[i] )
+			local minN, maxN = cursor.order( cursors[n] )
+
+			if minI[1] <= maxN[1] and minN[1] <= maxI[1] then print( "Merging a cursor bitches" )
+				local min = cursor.smaller( minI, minN )
+				local max = cursor .larger( maxI, maxN )
+				
+				cursors[n] = { position = min, selection = min[1] ~= max[1] and max or false }
+				table.remove( cursors, i )
+				break
+			end
+		end
+	end
+end
+
+function cursor.toLineChar( lines, position )
+	local line = 1
+
+	while lines[line] and position > #lines[line] + 1 do
+		position = position - (#lines[line] + 1)
+		line = line + 1
 	end
 
-	return cursor_list
+	return line, math.min( position, #lines[line] + 1 )
 end
 
-function cursor.clamp( cursor, lines )
-	local line, char = cursor[1], cursor[2]
-	if line > #lines then
-		line = #lines
+function cursor.toPosition( lines, line, char )
+	line = math.max( 1, math.min( line, #lines ) )
+
+	local position = 0
+
+	for i = 1, line - 1 do
+		position = position + #lines[i] + 1
 	end
-	if char > #lines[line] then
-		char = #lines[line] + 1
+
+	return position + math.min( math.max( 1, char ), #lines[line] + 1 )
+end
+
+function cursor.clamp( lines, c ) -- takes a cursor position or selection
+	return { c[1], cursor.toLineChar( lines, c[1] ) }
+end
+
+function cursor.up( lines, c )
+	return c[2] > 1 and { cursor.toPosition( lines, c[2] - 1, c[3] ), c[2] - 1, c[3] } or { 1, 1, 1 }
+end
+
+function cursor.down( lines, c )
+	if c[2] < #lines then
+		return { cursor.toPosition( lines, c[2] + 1, c[3] ), c[2] + 1, c[3] }
+	else
+		return { cursor.toPosition( lines, c[2], #lines[c[2]] + 1 ), c[2], #lines[c[2]] + 1 }
 	end
-	return { line, char }
 end
 
-function cursor.up( c, lines )
-	return c[1] > 1 and {c[1] - 1, c[2]} or { 1, 1 }
+function cursor.left( lines, c )
+	if c[3] > 1 then
+		return { c[1] - 1, c[2], math.min( c[3], #lines[c[2]] + 1 ) - 1 }
+	elseif c[2] > 1 then
+		return { cursor.toPosition( lines, c[2] - 1, #lines[c[2] - 1] + 1 ), c[2] - 1, #lines[c[2] - 1] + 1 }
+	else
+		return c
+	end
 end
 
-function cursor.down( c, lines )
-	return c[1] < #lines and {c[1] + 1, c[2]} or {c[1], #lines[#lines] + 1}
-end
-
-function cursor.left( c, lines )
-	return c[2] > 1 and { c[1], math.min( c[2], #lines[c[1]] + 1 ) - 1 } or c[1] > 1 and { c[1] - 1, #lines[c[1] - 1] + 1 } or { 1, 1 }
-end
-
-function cursor.right( c, lines )
-	return c[2] <= #lines[c[1]] and { c[1], c[2] + 1 } or c[1] < #lines and { c[1] + 1, 1 } or { c[1], #lines[#lines] + 1 }
+function cursor.right( lines, c )
+	if c[3] <= #lines[c[2]] then
+		return { c[1] + 1, c[2], c[3] + 1 }
+	elseif c[2] < #lines then
+		return { c[1] + 1, c[2] + 1, 1 }
+	else
+		return c
+	end
 end
 
 return cursor

@@ -107,29 +107,30 @@ function editor.panel:onDraw(mode)
 		local fontWidth, fontHeight = font:getWidth " ", font:getHeight()
 		local minl = math.floor(file.scrollX / fontHeight) + 1
 		local maxl = math.min( math.ceil((file.scrollX + editor.getDisplayHeight()) / fontHeight) + 1, #file.lines )
-		local ordered_cursors = cursor.sort(file.cursors)
-		local i, n = minl, #ordered_cursors
+		local cursors = file.cursors
+		local cursors_sorted = cursor.sort( cursors )
+		local i, n = minl, 1
 
 		love.graphics.setColor(40, 80, 255) -- change this!
 
-		while i <= maxl and n > 0 do
-			local min, max = cursor.order(ordered_cursors[n].position, ordered_cursors[n].selection)
+		while i <= maxl and n <= #cursors_sorted do
+			local min, max = cursor.order( cursors_sorted[n] )
 
-			if max and max[1] >= i and min[1] <= i then
-				local start = min[1] == i and #file.lines[i]:sub(1, min[2] - 1):gsub("\t", TABS) + 1 or 1
-				local finish = max[1] == i and #file.lines[i]:sub(1, max[2] - 1):gsub("\t", TABS) + 1 or #file.lines[i]:gsub("\t", TABS) + 1
+			if max[2] >= i and min[2] <= i then
+				local start = min[2] == i and #file.lines[i]:sub(1, min[3] - 1):gsub("\t", TABS) + 1 or 1
+				local finish = max[2] == i and #file.lines[i]:sub(1, max[3] - 1):gsub("\t", TABS) + 1 or #file.lines[i]:gsub("\t", TABS) + 1
 				local x1, y1 = text_window.locationToPixels(start, i, font)
 				local x2, y2 = text_window.locationToPixels(finish, i, font)
 
-				love.graphics.rectangle("fill", x1, y1, x2 - x1, fontHeight)
+				love.graphics.rectangle( "fill", x1, y1, x2 - x1, fontHeight )
 
-				if max[1] > i then
+				if max[2] > i then
 					i = i + 1
 				else
-					n = n - 1
+					n = n + 1
 				end
-			elseif not max or max[1] < i then
-				n = n - 1
+			elseif max[2] < i then
+				n = n + 1
 			else
 				i = i + 1
 			end
@@ -138,9 +139,9 @@ function editor.panel:onDraw(mode)
 		if editor.cursor_blink.state then
 			love.graphics.setColor( 0, 0, 0 ) -- change this!
 
-			for i, c in ipairs( editor.file().cursors ) do
-				local cpos = cursor.clamp(c.position, file.lines)
-				local cx, cy = #file.lines[cpos[1]]:sub(1, cpos[2] - 1):gsub( "\t", TABS ) + 1, cpos[1]
+			for i, c in ipairs( cursors ) do
+				local cpos = cursor.clamp( file.lines, c.position )
+				local cx, cy = #file.lines[cpos[2]]:sub(1, cpos[3] - 1):gsub( "\t", TABS ) + 1, cpos[2]
 				local x, y = text_window.locationToPixels( cx, cy, file.style.font )
 
 				love.graphics.line( x, y, x, y + fontHeight )
@@ -159,16 +160,25 @@ end
 function editor.panel:onTouch( x, y )
 	local file = editor.file()
 	local char, line = text_window.pixelsToLocation( x + file.scrollX, y + file.scrollY, file.style.font )
+	local c = cursor.new()
+	local pos = cursor.toPosition( file.lines, line, char )
 
-	file.cursors = { cursor.new( line, char ) }
-	file.cursors[1].position = cursor.clamp( file.cursors[1].position, file.lines )
+	c.position = cursor.clamp( file.lines, { pos, line, char } )
+	
+	if util.isCtrlHeld() then
+		file.cursors[#file.cursors + 1] = c
+	else
+		file.cursors = { c }
+	end
 end
 
 function editor.panel:onMove( x, y )
 	local file = editor.file()
 	local char, line = text_window.pixelsToLocation( x + file.scrollX, y + file.scrollY, file.style.font )
+	local pos = cursor.toPosition( file.lines, line, char )
 
-	file.cursors[1].selection = cursor.clamp( { line, char }, file.lines )
+	file.cursors[#file.cursors].selection = cursor.clamp( file.lines, { pos, line, char } )
+	cursor.merge( file.cursors )
 end
 
 function editor.panel:onRelease( x, y )
@@ -178,21 +188,26 @@ end
 function editor.panel:onKeypress( key )
 
 	local file = editor.file()
-
 	local isMovementKey = key == "right" or key == "up" or key == "left" or key == "down"
 
 	if isMovementKey then
+
 		for i = 1, #file.cursors do
 			if util.isAltHeld() then
-				file.cursors[i].selection = false
-				file.cursors[#file.cursors + 1] = cursor.new( cursor[key](file.cursors[i].position, file.lines) )
+				local new = cursor.new()
+				new.position = cursor[key]( file.lines, file.cursors[i].position )
+				file.cursors[#file.cursors + 1] = new
 			else
 				file.cursors[i].selection = util.isShiftHeld() and (file.cursors[i].selection or file.cursors[i].position) or false
-				file.cursors[i].position = cursor[key](file.cursors[i].position, file.lines)
+				file.cursors[i].position = cursor[key]( file.lines, file.cursors[i].position )
 			end
 		end
 		editor.resetCursorBlink()
-		cursor.merge(cursor.sort(file.cursors))
+		cursor.merge(file.cursors)
+
+	elseif key == "return" then
+		text_editor.write( file.lines, file.formatting, file.cursors, "\n", true )
+
 	end
 
 end
@@ -203,7 +218,7 @@ end
 
 function editor.panel:onTextInput( text )
 	local file = editor.file()
-	text_editor.write( file.lines, file.formatting, cursor.sort(file.cursors), text )
+	text_editor.write( file.lines, file.formatting, file.cursors, text )
 end
 
 function editor.load()

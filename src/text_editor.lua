@@ -5,67 +5,75 @@ local format = require "src.formatting"
 
 local text_editor = {}
 
-function text_editor.write( lines, formatting, ordered_cursors, text, text_assigned_to_each_cursor )
+function text_editor.write( lines, formatting, cursors, text, text_assigned_to_each_cursor )
 
 	local _newlines = util.splitlines( text )
-	local one_line_per_cursor = not text_assigned_to_each_cursor and #_newlines == #ordered_cursors
+	local one_line_per_cursor = #_newlines == #cursors and not text_assigned_to_each_cursor
 	local flines = formatting.lines
 	local fstate = formatting.states
 
-	for i = 1, #ordered_cursors do
+	for i = 1, #cursors do
 		local newlines = one_line_per_cursor and { _newlines[i] } or _newlines
-		local min, max = cursor.order(ordered_cursors[i].position, ordered_cursors[i].selection)
-		local linediff = (max and (min[1] - max[1]) or 0) + #newlines - 1
-		local chardiff = #newlines == 1 and (max and max[2] or min[2]) - min[2] + #newlines[1] or #newlines[#newlines] - min[2] + 1
-		local new_position = { min[1] + #newlines - 1, #newlines == 1 and min[2] + #newlines[1] or #newlines[#newlines] + 1 }
+		local min, max = cursor.order( cursors[i] ) -- min and max of position and selection
 
-		for n = i + 1, #ordered_cursors do
-			local a, b = ordered_cursors[n].position, ordered_cursors[n].selection
-
-			if a[1] == (max or min)[1] then
-				a[2] = a[2] + chardiff
-			end
-			a[1] = a[1] + linediff
-
-			if b then
-				if b[1] == (max or min)[1] then
-					b[2] = b[2] + chardiff
-				end
-				b[1] = b[1] + linediff
+		-- cut out selected text
+		if max[1] ~= min[1] then -- if the selection and position aren't the same
+			lines[min[2]] = lines[min[2]]:sub( 1, min[3] - 1 ) .. lines[max[2]]:sub( max[3] ) -- combine the first and last lines
+			for i = max[2], min[2] + 1, -1 do -- remove other lines
+				table.remove( lines, i )
+				table.remove( flines, i )
+				table.remove( fstate, i )
 			end
 		end
 
-		if max then
-			if min[1] == max[1] then
-				lines[min[1]] = lines[min[1]]:sub( 1, min[2] - 1 ) .. lines[max[1]]:sub( max[2] )
-			else
-				lines[min[1]] = lines[min[1]]:sub( 1, min[2] - 1 ) .. lines[max[1]]:sub( max[2] )
-				for l = min[1] + 1, max[1] do
-					table.remove( lines, min[1] + 1 )
-					table.remove( flines, min[1] + 1 )
-					table.remove( fstate, min[1] + 1 )
-				end
-			end
-		end
-
-		ordered_cursors[i] = { position = new_position, selection = false }
-
-		if #newlines == 1 then
-			lines[min[1]] = lines[min[1]]:sub( 1, min[2] - 1 ) .. newlines[1] .. lines[min[1]]:sub( min[2] )
+		-- write new text
+		if #newlines == 1 then -- write the one line of text
+			lines[min[2]] = lines[min[2]]:sub( 1, min[3] - 1 ) .. newlines[1] .. lines[min[2]]:sub( min[3] )
 		else
-			local line = lines[min[1]]
-			local lastline = newlines[#newlines] .. line:sub( min[2] )
-			lines[min[1]] = line:sub( 1, min[2] - 1 ) .. newlines[1]
+			local add_to_last_line = lines[min[2]]:sub( min[3] ) -- newlines[#newlines] should have the remainder of this line added on
+
+			print( min[3] )			
+			lines[min[2]] = lines[min[2]]:sub( 1, min[3] - 1 ) .. newlines[1] -- the cursor line should be cut up to the cursor and have the first line added on
 
 			for i = 2, #newlines do
-				table.insert( lines, min[1] + i - 1, i < #newlines and newlines[i] or lastline )
-				table.insert( flines, min[1] + i - 1, "" )
-				table.insert( fstate, min[1] + i - 1, {} )
+				local index = min[2] + i - 1
+
+				table.insert( lines, index, newlines[i] .. ( i == #newlines and add_to_last_line or "" ) ) -- add the new line in
+				table.insert( flines, index, "" )
+				table.insert( fstate, index, {} )
 			end
 		end
 
-		format.format( lines, formatting, min[1], min[1] + #newlines - 1 )
+		-- update other cursor positions
+		local textdiff = one_line_per_cursor and #newlines[1] or #text - ( max[1] - min[1] )
 
+		for j = 1, #cursors do
+			if j ~= i then -- since the writing cursor will be updated independently
+
+				if cursors[j].position[1] > cursors[i].position[1] then -- if the cursor is after the editing one
+					cursors[j] = {
+						position = { cursors[j].position[1] + textdiff, cursor.toLineChar( lines, cursors[j].position[1] + textdiff ) };
+						selection = cursors[j].selection and { cursors[j].selection[1] + textdiff, cursor.toLineChar( lines, cursors[j].selection[1] + textdiff ) }
+					}
+				end
+
+			end
+		end
+
+		-- update self cursor position
+		if #newlines == 1 then
+			local line, char = min[2], min[3] + #newlines[1]
+			local pos = min[1] + #newlines[1]
+
+			cursors[i] = { position = { pos, line, char }, selection = false }
+		else
+			local line, char = min[2] + #newlines - 1, #newlines[#newlines] + 1
+			local pos = cursor.toPosition( lines, line, char )
+
+			cursors[i] = { position = { pos, line, char }, selection = false }
+		end
+
+		format.format( lines, formatting, min[2], math.max( max[2], min[2] + #newlines - 1 ) )
 	end
 
 end

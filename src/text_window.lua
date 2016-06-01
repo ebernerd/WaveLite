@@ -5,7 +5,7 @@ function text_window.pixelsToLocation(x, y, font)
 	local fWidth = font:getWidth " "
 	local fHeight = font:getHeight()
 
-	return math.floor( x / fWidth + 0.5 ) + 1, math.floor( y / fHeight ) + 1
+	return math.floor( x / fWidth + 0.2 ) + 1, math.floor( y / fHeight ) + 1
 end
 
 function text_window.locationToPixels(x, y, font)
