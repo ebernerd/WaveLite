@@ -246,6 +246,9 @@ function editor.panel:onKeypress( key )
 			} }
 		end
 
+	elseif key == "tab" then
+		text_editor.write( tab.lines, tab.formatting, tab.cursors, "\t", true )
+
 	end
 
 end
@@ -264,6 +267,11 @@ function editor.load()
 this is a string
 of awesome text
 that's really cool]] )
+	editor.tab().formatting.formatter = formatting.newFormatter( require "resources.languages.lua" )
+
+	for k, v in pairs( require "resources.styles.default" ) do
+		editor.tab().style[k] = v
+	end
 end
 
 return editor
