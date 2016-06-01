@@ -14,8 +14,8 @@ local TABS = "    "
 
 local editor = {}
 
-editor.files = {}
-editor.workingfile = 1
+editor.tabs = {}
+editor.workingtab = 1
 
 editor.panel = UIPanel.body:add( UIPanel.new() )
 editor.panel.enable_keyboard = true
@@ -49,10 +49,10 @@ function editor.getDisplayHeight()
 	return editor.panel.height
 end
 
-function editor.open( filename, filecontent )
+function editor.open( tabname, tabcontent )
 	local t = {
-		filename = filename;
-		lines = util.splitlines( filecontent );
+		tabname = tabname;
+		lines = util.splitlines( tabcontent );
 		formatting = {
 			lines = {};
 			states = { [0] = {} };
@@ -71,13 +71,13 @@ function editor.open( filename, filecontent )
 	t.style.default = { 40, 40, 40 }
 	formatting.format( t.lines, t.formatting )
 
-	editor.files[#editor.files + 1] = t
+	editor.tabs[#editor.tabs + 1] = t
 
 	return t
 end
 
-function editor.file()
-	return editor.files[editor.workingfile]
+function editor.tab()
+	return editor.tabs[editor.workingtab]
 end
 
 function editor.wheelmoved( x, y )
@@ -102,12 +102,12 @@ end
 
 function editor.panel:onDraw(mode)
 	if mode == "after" then
-		local file = editor.file()
-		local font = file.style.font
+		local tab = editor.tab()
+		local font = tab.style.font
 		local fontWidth, fontHeight = font:getWidth " ", font:getHeight()
-		local minl = math.floor(file.scrollX / fontHeight) + 1
-		local maxl = math.min( math.ceil((file.scrollX + editor.getDisplayHeight()) / fontHeight) + 1, #file.lines )
-		local cursors = file.cursors
+		local minl = math.floor(tab.scrollX / fontHeight) + 1
+		local maxl = math.min( math.ceil((tab.scrollX + editor.getDisplayHeight()) / fontHeight) + 1, #tab.lines )
+		local cursors = tab.cursors
 		local cursors_sorted = cursor.sort( cursors )
 		local i, n = minl, 1
 
@@ -117,8 +117,8 @@ function editor.panel:onDraw(mode)
 			local min, max = cursor.order( cursors_sorted[n] )
 
 			if max[2] >= i and min[2] <= i then
-				local start = min[2] == i and #file.lines[i]:sub(1, min[3] - 1):gsub("\t", TABS) + 1 or 1
-				local finish = max[2] == i and #file.lines[i]:sub(1, max[3] - 1):gsub("\t", TABS) + 1 or #file.lines[i]:gsub("\t", TABS) + 1
+				local start = min[2] == i and #tab.lines[i]:sub(1, min[3] - 1):gsub("\t", TABS) + 1 or 1
+				local finish = max[2] == i and #tab.lines[i]:sub(1, max[3] - 1):gsub("\t", TABS) + 1 or #tab.lines[i]:gsub("\t", TABS) + 1
 				local x1, y1 = text_window.locationToPixels(start, i, font)
 				local x2, y2 = text_window.locationToPixels(finish, i, font)
 
@@ -140,9 +140,9 @@ function editor.panel:onDraw(mode)
 			love.graphics.setColor( 0, 0, 0 ) -- change this!
 
 			for i, c in ipairs( cursors ) do
-				local cpos = cursor.clamp( file.lines, c.position )
-				local cx, cy = #file.lines[cpos[2]]:sub(1, cpos[3] - 1):gsub( "\t", TABS ) + 1, cpos[2]
-				local x, y = text_window.locationToPixels( cx, cy, file.style.font )
+				local cpos = cursor.clamp( tab.lines, c.position )
+				local cx, cy = #tab.lines[cpos[2]]:sub(1, cpos[3] - 1):gsub( "\t", TABS ) + 1, cpos[2]
+				local x, y = text_window.locationToPixels( cx, cy, tab.style.font )
 
 				love.graphics.line( x, y, x, y + fontHeight )
 			end
@@ -152,33 +152,33 @@ function editor.panel:onDraw(mode)
 		love.graphics.rectangle( "line", 0, 0, editor.getDisplayWidth(), editor.getDisplayHeight() )
 
 		for i = minl, maxl do
-			rendering.formatted_text_line( formatting.parse( file.formatting.lines[i] ), editor.file().style, 0, (i-1) * font:getHeight() - file.scrollX )
+			rendering.formatted_text_line( formatting.parse( tab.formatting.lines[i] ), editor.tab().style, 0, (i-1) * font:getHeight() - tab.scrollX )
 		end
 	end
 end
 
 function editor.panel:onTouch( x, y )
-	local file = editor.file()
-	local char, line = text_window.pixelsToLocation( x + file.scrollX, y + file.scrollY, file.style.font )
+	local tab = editor.tab()
+	local char, line = text_window.pixelsToLocation( x + tab.scrollX, y + tab.scrollY, tab.style.font )
 	local c = cursor.new()
-	local pos = cursor.toPosition( file.lines, line, char )
+	local pos = cursor.toPosition( tab.lines, line, char )
 
-	c.position = cursor.clamp( file.lines, { pos, line, char } )
+	c.position = cursor.clamp( tab.lines, { pos, line, char } )
 	
 	if util.isCtrlHeld() then
-		file.cursors[#file.cursors + 1] = c
+		tab.cursors[#tab.cursors + 1] = c
 	else
-		file.cursors = { c }
+		tab.cursors = { c }
 	end
 end
 
 function editor.panel:onMove( x, y )
-	local file = editor.file()
-	local char, line = text_window.pixelsToLocation( x + file.scrollX, y + file.scrollY, file.style.font )
-	local pos = cursor.toPosition( file.lines, line, char )
+	local tab = editor.tab()
+	local char, line = text_window.pixelsToLocation( x + tab.scrollX, y + tab.scrollY, tab.style.font )
+	local pos = cursor.toPosition( tab.lines, line, char )
 
-	file.cursors[#file.cursors].selection = cursor.clamp( file.lines, { pos, line, char } )
-	cursor.merge( file.cursors )
+	tab.cursors[#tab.cursors].selection = cursor.clamp( tab.lines, { pos, line, char } )
+	cursor.merge( tab.cursors )
 end
 
 function editor.panel:onRelease( x, y )
@@ -187,26 +187,64 @@ end
 
 function editor.panel:onKeypress( key )
 
-	local file = editor.file()
+	local tab = editor.tab()
 	local isMovementKey = key == "right" or key == "up" or key == "left" or key == "down"
 
 	if isMovementKey then
 
-		for i = 1, #file.cursors do
+		for i = 1, #tab.cursors do
 			if util.isAltHeld() then
 				local new = cursor.new()
-				new.position = cursor[key]( file.lines, file.cursors[i].position )
-				file.cursors[#file.cursors + 1] = new
+				new.position = cursor[key]( tab.lines, tab.cursors[i].position )
+				tab.cursors[#tab.cursors + 1] = new
 			else
-				file.cursors[i].selection = util.isShiftHeld() and (file.cursors[i].selection or file.cursors[i].position) or false
-				file.cursors[i].position = cursor[key]( file.lines, file.cursors[i].position )
+				tab.cursors[i].selection = util.isShiftHeld() and (tab.cursors[i].selection or tab.cursors[i].position) or false
+				tab.cursors[i].position = cursor[key]( tab.lines, tab.cursors[i].position )
 			end
 		end
 		editor.resetCursorBlink()
-		cursor.merge(file.cursors)
+		cursor.merge(tab.cursors)
 
 	elseif key == "return" then
-		text_editor.write( file.lines, file.formatting, file.cursors, "\n", true )
+		text_editor.write( tab.lines, tab.formatting, tab.cursors, "\n", true )
+
+	elseif key == "backspace" then
+		for i = 1, #tab.cursors do
+			if not tab.cursors[i].selection then
+				tab.cursors[i].selection = cursor.left( tab.lines, tab.cursors[i].position )
+			end
+		end
+		text_editor.write( tab.lines, tab.formatting, tab.cursors, "", true )
+
+	elseif key == "delete" then
+		for i = 1, #tab.cursors do
+			if not tab.cursors[i].selection then
+				tab.cursors[i].selection = cursor.right( tab.lines, tab.cursors[i].position )
+			end
+		end
+		text_editor.write( tab.lines, tab.formatting, tab.cursors, "", true )
+
+	elseif key == "kp1" then
+		for i = 1, #tab.cursors do
+			tab.cursors[i].selection = false
+			tab.cursors[i].position[3] = math.huge
+			tab.cursors[i].position[1] = cursor.toPosition( tab.lines, tab.cursors[i].position[2], tab.cursors[i].position[3] )
+		end
+
+	elseif key == "kp7" then
+		for i = 1, #tab.cursors do
+			tab.cursors[i].selection = false
+			tab.cursors[i].position[3] = 1
+			tab.cursors[i].position[1] = cursor.toPosition( tab.lines, tab.cursors[i].position[2], tab.cursors[i].position[3] )
+		end
+
+	elseif key == "a" then
+		if util.isCtrlHeld() then
+			tab.cursors = { {
+				position = { cursor.toPosition( tab.lines, #tab.lines, #tab.lines[#tab.lines] + 1 ), #tab.lines, #tab.lines[#tab.lines] + 1 };
+				selection = { 1, 1, 1 };
+			} }
+		end
 
 	end
 
@@ -217,8 +255,8 @@ function editor.panel:onKeyrelease( key )
 end
 
 function editor.panel:onTextInput( text )
-	local file = editor.file()
-	text_editor.write( file.lines, file.formatting, file.cursors, text )
+	local tab = editor.tab()
+	text_editor.write( tab.lines, tab.formatting, tab.cursors, text )
 end
 
 function editor.load()
