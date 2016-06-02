@@ -23,6 +23,8 @@ function util.splitlines( text )
 	for i = 1, #text do
 		if text:sub( i, i ) == "\n" then
 			lines[#lines + 1] = ""
+		elseif text:sub( i, i + 1 ) == "\13\n" then
+			-- do nothing
 		else
 			lines[#lines] = lines[#lines] .. text:sub( i, i )
 		end
@@ -39,7 +41,7 @@ function util.lookup_style( style, index )
 		local i = table.concat( parts, ".", 1, n )
 		if style[i] then return style[i] end
 	end
-	return style.default
+	return style[parts[1]:gsub( "%w+$", "default" )]
 end
 
 function util.formatText( text )

@@ -11,6 +11,7 @@ return {
 	["syntax:Operator"] = rgb( 0xf06090 );
 	["syntax:Symbol"] = rgb( 0xf06090 );
 	["syntax:Comment"] = rgb( 0x90a0a0 );
+	["syntax:Typename"] = rgb( 0x60e0f0 );
 	["syntax:default"] = rgb( 0xe0e0e0 );
 
 	-- editor settings

@@ -1,5 +1,7 @@
 
-return {
+local formatting = require "src.formatting"
+
+return formatting.newFormatter {
 	keywords = {
 		["if"] = "syntax:Keyword.Control.If";
 		["else"] = "syntax:Keyword.Control.Else";

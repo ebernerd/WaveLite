@@ -20,11 +20,14 @@ local INITIAL_TEXT = [==[
 --[[
 	Why hello there!
 
+	By the way, make the window fullscreen to read all this.
+
 	Here's what needs to be done:
 		Tabs are totally hacked together right now... a bunch of "    "s hardcoded in and they're just horrible.
-		You need to fix tabs. Use an entry in a style.
+		You need to fix tabs, as well as navigating around them.
+		Having monospaced fonts would be great I tell you.
 
-		Plugins should load from a file soon.
+		Plugins and resources should load with a proper environment.
 
 		Clicking needs to be an event. Dragging needs to be in the plugin API.
 			selection = plugin.api.beginSelection( line, char, append )
@@ -34,15 +37,29 @@ local INITIAL_TEXT = [==[
 
 		Scrollbars are great but also a little glitchy and also hacked together.
 		Make a nice, consistent interface that everything can use. Make the scrollbars draggable too.
+		Maybe make scrollbars a part of UIPanel?
 
 		It would be nice to have styles work like this:
-		{Constant.String:"oooh this is an {Escape:\\'}escaped{Constant.String.Escape:\\'} string"}
-		-> {Constant.String}, {Constant.String:Escape}, {Constant.String}
+		{syntax.Constant.String:"oooh this is an {#Escape;\\'}escaped{#Escape;\\'} string"}
+		-> {Constant.String}, {Constant.String.Escape}, {Constant.String}
 		You could also implement underlining and bold {@underline:text}, maybe even more later on
+		Also maybe {@underline, @bold, syntax:Constant.Keyword;stuff}
+
+		Events should have selectors, something like this
+		event.bind("editor:key:ctrl-l#language:lua;style:blah;filename:this")
 
 		The UI needs work. Add in stuff for adding buttons on the top, and add an info line on the bottom.
+		Add some kind of list framework on the side too.
 
 		Ctrl-z, Ctrl-y, history, shizzle like that
+
+		Instantiatable text editor panel so you can have them all over the place. Need a 'focussed' parameter.
+			UIPanel.getTextFocus(self)
+
+		Oh this means you'll need to pass an editor object around
+			event.bind("editor:key:left", function(editor)
+				editor.cursor_left()
+			end)
 ]]
 
 if editor.isFinished() then
@@ -130,7 +147,7 @@ function editor.getSideLineWidth()
 	local padding2 = 2 * tab.style["editor:Lines.Padding"]
 	local line_area_width = padding2
 
-	for i = math.max( 2, #tab.lines - 9 ), #tab.lines do
+	for i = math.max( 1, #tab.lines - 9 ), #tab.lines do
 		line_area_width = math.max( line_area_width, font:getWidth( i ) + padding2 )
 	end
 
@@ -370,6 +387,7 @@ end
 
 function editor.panel:onRelease( x, y )
 	editor.is_mouse_dragging = false
+	editor.resetCursorBlink()
 end
 
 function editor.panel:onKeypress( key )
@@ -398,13 +416,13 @@ function editor.load()
 	local plugin = require "src.plugin"
 
 	editor.open( "untitled", INITIAL_TEXT )
-	editor.tab().formatting.formatter = formatting.newFormatter( require "resources.languages.lua" )
+	editor.tab().formatting.formatter = require "resources.languages.lua"
 	editor.tab().style = require "resources.styles.light"
 
 	formatting.format( editor.tab().lines, editor.tab().formatting )
 
 	require "resources.plugins.core"
-	require "resources.plugins.style-switcher"
+	require "resources.plugins.custom"
 end
 
 return editor

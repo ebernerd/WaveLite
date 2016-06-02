@@ -29,7 +29,7 @@ end
 function formatting.parse( text )
 	local i = 1
 	local blocks = {}
-	local stack = { { text = "", style = "default" } }
+	local stack = { { text = "", style = "syntax:default" } }
 	local escaped = false
 
 	while i <= #text do
