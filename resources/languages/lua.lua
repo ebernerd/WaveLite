@@ -1,68 +1,68 @@
 
 return {
 	keywords = {
-		["if"] = "Keyword.Control.If";
-		["else"] = "Keyword.Control.Else";
-		["elseif"] = "Keyword.Control.Elseif";
+		["if"] = "syntax:Keyword.Control.If";
+		["else"] = "syntax:Keyword.Control.Else";
+		["elseif"] = "syntax:Keyword.Control.Elseif";
 
-		["repeat"] = "Keyword.Loop.Repeat";
-		["while"] = "Keyword.Loop.While";
+		["repeat"] = "syntax:Keyword.Loop.Repeat";
+		["while"] = "syntax:Keyword.Loop.While";
 
-		["for"] = "Keyword.Loop.For";
-		["in"] = "Keyword";
+		["for"] = "syntax:Keyword.Loop.For";
+		["in"] = "syntax:Keyword";
 
-		["and"] = "Operator.And";
-		["or"] = "Operator.Or";
-		["not"] = "Operator.Not";
+		["and"] = "syntax:Operator.And";
+		["or"] = "syntax:Operator.Or";
+		["not"] = "syntax:Operator.Not";
 
-		["break"] = "Keyword.Control.Break";
-		["return"] = "Keyword.Control.Return";
+		["break"] = "syntax:Keyword.Control.Break";
+		["return"] = "syntax:Keyword.Control.Return";
 
-		["do"] = "Keyword";
-		["then"] = "Keyword";
-		["until"] = "Keyword";
-		["end"] = "Keyword.Control";
+		["do"] = "syntax:Keyword";
+		["then"] = "syntax:Keyword";
+		["until"] = "syntax:Keyword";
+		["end"] = "syntax:Keyword.Control";
 
-		["function"] = "Keyword.Function";
+		["function"] = "syntax:Keyword.Function";
 
-		["local"] = "Keyword.Declare";
+		["local"] = "syntax:Keyword.Declare";
 
-		["true"] = "Constant.Boolean";
-		["false"] = "Constant.Boolean";
-		["nil"] = "Constant.Null";
+		["true"] = "syntax:Constant.Boolean";
+		["false"] = "syntax:Constant.Boolean";
+		["nil"] = "syntax:Constant.Null";
 	};
 
 	symbols = {
-		["="] = "Symbol";
+		["="] = "syntax:Symbol";
 
-		["["] = "Symbol.Bracket.Square";
-		["]"] = "Symbol.Bracket.Square";
-		["("] = "Symbol.Bracket.Round";
-		[")"] = "Symbol.Bracket.Round";
-		["{"] = "Symbol.Bracket.Curly";
-		["}"] = "Symbol.Bracket.Curly";
+		["["] = "syntax:Symbol.Bracket.Square";
+		["]"] = "syntax:Symbol.Bracket.Square";
+		["("] = "syntax:Symbol.Bracket.Round";
+		[")"] = "syntax:Symbol.Bracket.Round";
+		["{"] = "syntax:Symbol.Bracket.Curly";
+		["}"] = "syntax:Symbol.Bracket.Curly";
 
-		["+"] = "Operator.Math.Add";
-		["-"] = "Operator.Math.Sub";
-		["*"] = "Operator.Math.Mul";
-		["/"] = "Operator.Math.Div";
-		["%"] = "Operator.Math.Mod";
-		["^"] = "Operator.Math.Pow";
+		["+"] = "syntax:Operator.Math.Add";
+		["-"] = "syntax:Operator.Math.Sub";
+		["*"] = "syntax:Operator.Math.Mul";
+		["/"] = "syntax:Operator.Math.Div";
+		["%"] = "syntax:Operator.Math.Mod";
+		["^"] = "syntax:Operator.Math.Pow";
 
-		["=="] = "Operator.Compare.Eq";
-		["~="] = "Operator.Compare.Neq";
-		[">="] = "Operator.Compare.Gte";
-		["<="] = "Operator.Compare.Lte";
-		[">"] = "Operator.Compare.Gt";
-		["<"] = "Operator.Compare.Lt";
+		["=="] = "syntax:Operator.Compare.Eq";
+		["~="] = "syntax:Operator.Compare.Neq";
+		[">="] = "syntax:Operator.Compare.Gte";
+		["<="] = "syntax:Operator.Compare.Lte";
+		[">"] = "syntax:Operator.Compare.Gt";
+		["<"] = "syntax:Operator.Compare.Lt";
 
-		["#"] = "Operator.Len";
+		["#"] = "syntax:Operator.Len";
 
-		["."] = "Symbol.Index";
-		[":"] = "Symbol.Index";
+		["."] = "syntax:Symbol.Index";
+		[":"] = "syntax:Symbol.Index";
 
-		[","] = "Symbol.Sep";
-		[";"] = "Symbol.Sep";
+		[","] = "syntax:Symbol.Sep";
+		[";"] = "syntax:Symbol.Sep";
 	};
 
 	comments = {

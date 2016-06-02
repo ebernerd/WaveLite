@@ -37,7 +37,7 @@ function formatting.parse( text )
 			escaped = true
 			i = i + 1
 		elseif not escaped and text:sub( i, i ) == "{" then
-			local style = text:match( "^(%w[%.%w]+):", i + 1 )
+			local style = text:match( "^(%w[%.:%w]+);", i + 1 )
 			if style then
 				blocks[#blocks + 1] = { text = stack[#stack].text, style = stack[#stack].style }
 				stack[#stack].text = ""
@@ -49,7 +49,9 @@ function formatting.parse( text )
 			end
 		elseif not escaped and text:sub( i, i ) == "}" then
 			blocks[#blocks + 1] = { text = stack[#stack].text, style = stack[#stack].style }
-			stack[#stack] = nil
+			if stack[2] then
+				stack[#stack] = nil
+			end
 			i = i + 1
 		else
 			escaped = false
@@ -77,9 +79,9 @@ function formatting.newFormatter( lang )
 			if ending then
 				state.in_section = false
 				i = ending + 1
-				res = (sindex == "strings" and "{Constant.String:" or "{Comment:") .. util.formatText( line:sub( 1, ending ) ) .. "}"
+				res = (sindex == "strings" and "{syntax:Constant.String;" or "{syntax:Comment;") .. util.formatText( line:sub( 1, ending ) ) .. "}"
 			else
-				return (sindex == "strings" and "{Constant.String:" or "{Comment:") .. util.formatText( line ) .. "}"
+				return (sindex == "strings" and "{syntax:Constant.String;" or "{syntax:Comment;") .. util.formatText( line ) .. "}"
 			end
 		end
 
@@ -97,32 +99,32 @@ function formatting.newFormatter( lang )
 				local ending = util.findEndingMatch( line, pat, lang[sindex].finish[index], lang[sindex].escape and lang[sindex].escape[index], i + #pat )
 
 				if ending then
-					res = res .. (sindex == "strings" and "{Constant.String:" or "{Comment:") .. util.formatText( line:sub( i, ending ) ) .. "}"
+					res = res .. (sindex == "strings" and "{syntax:Constant.String;" or "{syntax:Comment;") .. util.formatText( line:sub( i, ending ) ) .. "}"
 					i = ending + 1
 				else
 					state.in_section = fullindex
 					state.string_match = pat
-					res = res .. (sindex == "strings" and "{Constant.String:" or "{Comment:") .. util.formatText( line:sub( i ) ) .. "}"
+					res = res .. (sindex == "strings" and "{syntax:Constant.String;" or "{syntax:Comment;") .. util.formatText( line:sub( i ) ) .. "}"
 					return res
 				end
 
 			elseif line:find( "^%d*%.?%d", i ) then
 				local match = line:match( "^%d*%.?%d+e[%+%-]%d+", i ) or line:match( "^%d*%.?%d+", i )
-				res = res .. "{Constant.Number:" .. match .. "}"
+				res = res .. "{syntax:Constant.Number;" .. match .. "}"
 				i = i + #match
 
 			elseif line:find( "^0x%x", i ) then
 				local match = line:match( "^0x%x+", i )
-				res = res .. "{Constant.Number:" .. match .. "}"
+				res = res .. "{syntax:Constant.Number;" .. match .. "}"
 				i = i + #match
 
 			elseif line:find( "^[%w_]", i ) then
 				local match = line:match( "^[%w_]+", i )
 
 				if lang.keywords[match] then
-					res = res .. "{" .. lang.keywords[match] .. ":" .. match .. "}"
+					res = res .. "{" .. lang.keywords[match] .. ";" .. match .. "}"
 				else
-					res = res .. "{Constant.Identifier:" .. match .. "}"
+					res = res .. "{syntax:Constant.Identifier;" .. match .. "}"
 				end
 				i = i + #match
 
@@ -138,7 +140,7 @@ function formatting.newFormatter( lang )
 				end
 
 				if l > 0 then
-					res = res .. "{" .. v .. ":" .. util.formatText( line:sub( i, i + l - 1 ) ) .. "}"
+					res = res .. "{" .. v .. ";" .. util.formatText( line:sub( i, i + l - 1 ) ) .. "}"
 					i = i + l
 				else
 					res = res .. util.formatText( line:sub( i, i ) )

@@ -11,7 +11,7 @@ local plugin = {}
 plugin.api = {}
 
 function plugin.load( path )
-
+	require "path"
 end
 
 function plugin.list()
@@ -42,6 +42,7 @@ function plugin.api.cursor_left( select, create, word )
 	if word then return error "movement by word isn't implemented yet" end
 
 	local tab = editor.tab()
+	local font = tab.style["editor:Font"]
 
 	for i = 1, #tab.cursors do
 		local new = cursor.new()
@@ -64,6 +65,7 @@ function plugin.api.cursor_right( select, create, word )
 	if word then return error "movement by word isn't implemented yet" end
 
 	local tab = editor.tab()
+	local font = tab.style["editor:Font"]
 
 	for i = 1, #tab.cursors do
 		local new = cursor.new()
@@ -84,16 +86,17 @@ end
 
 function plugin.api.cursor_up( select, create )
 	local tab = editor.tab()
+	local font = tab.style["editor:Font"]
 
 	for i = 1, #tab.cursors do
 		local new = cursor.new()
 
 		if tab.cursors[i].position[2] > 1 then
 			local cline, cchar = tab.cursors[i].position[2], tab.cursors[i].position[2] > 1 and tab.cursors[i].position[3] or 1
-			local x, y = text_window.locationToPixels( tab.lines, cchar, cline, tab.style.font, tab.style.font:getWidth "    " )
-			local char, line = text_window.pixelsToLocation( tab.lines, x, y - (cline > 1 and tab.style.font:getHeight() or 0), tab.style.font, tab.style.font:getWidth "    " )
+			local x, y = text_window.locationToPixels( tab.lines, cchar, cline, font, font:getWidth "    " )
+			local char, line = text_window.pixelsToLocation( tab.lines, x, y - (cline > 1 and font:getHeight() or 0), font, font:getWidth "    " )
 
-			if x >= text_window.locationToPixels( tab.lines, #tab.lines[cline] + 1, cline, tab.style.font, tab.style.font:getWidth "    " ) then
+			if x >= text_window.locationToPixels( tab.lines, #tab.lines[cline] + 1, cline, font, font:getWidth "    " ) then
 				char = cchar
 			end
 
@@ -117,16 +120,17 @@ end
 
 function plugin.api.cursor_down( select, create )
 	local tab = editor.tab()
+	local font = tab.style["editor:Font"]
 
 	for i = 1, #tab.cursors do
 		local new = cursor.new()
 
 		if tab.cursors[i].position[2] < #tab.lines then
 			local cline, cchar = tab.cursors[i].position[2], tab.cursors[i].position[2] < #tab.lines and tab.cursors[i].position[3] or #tab.lines[#tab.lines] + 1
-			local x, y = text_window.locationToPixels( tab.lines, cchar, cline, tab.style.font, tab.style.font:getWidth "    " )
-			local char, line = text_window.pixelsToLocation( tab.lines, x, y + (cline < #tab.lines and tab.style.font:getHeight() or 0), tab.style.font, tab.style.font:getWidth "    " )
+			local x, y = text_window.locationToPixels( tab.lines, cchar, cline, font, font:getWidth "    " )
+			local char, line = text_window.pixelsToLocation( tab.lines, x, y + (cline < #tab.lines and font:getHeight() or 0), font, font:getWidth "    " )
 
-			if x >= text_window.locationToPixels( tab.lines, #tab.lines[cline] + 1, cline, tab.style.font, tab.style.font:getWidth "    " ) then
+			if x >= text_window.locationToPixels( tab.lines, #tab.lines[cline] + 1, cline, font, font:getWidth "    " ) then
 				char = cchar
 			end
 
@@ -233,7 +237,7 @@ function plugin.api.cursor_onscreen()
 	local cursor = tab.cursors[#tab.cursors]
 	local line = cursor.position[2]
 	local char = cursor.position[3]
-	local font = tab.style.font
+	local font = tab.style["editor:Font"]
 	local x = font:getWidth( tab.lines[line]:sub( 1, char - 1 ):gsub( "\t", "    " ) )
 	local y = (line - 1) * font:getHeight()
 

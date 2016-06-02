@@ -11,9 +11,9 @@ local scrollbar = require "src.scrollbar"
 
 local PADDING_TOPLEFT = 100
 local PADDING_BOTTOMRIGHT = 20
-local TABS = "    "
 local SCROLLBAR_PADDING = 3
 local SCROLLBAR_SIZE = 16
+local TABWIDTH = 4
 
 local INITIAL_TEXT = [==[
 
@@ -41,6 +41,8 @@ local INITIAL_TEXT = [==[
 		You could also implement underlining and bold {@underline:text}, maybe even more later on
 
 		The UI needs work. Add in stuff for adding buttons on the top, and add an info line on the bottom.
+
+		Ctrl-z, Ctrl-y, history, shizzle like that
 ]]
 
 if editor.isFinished() then
@@ -83,16 +85,16 @@ function editor.scroll_right:onParentResized()
 end
 
 function editor.scroll_right:onDraw()
-	love.graphics.setColor( editor.tab().style["Scrollbar.Tray"] )
+	love.graphics.setColor( editor.tab().style["editor:Scrollbar.Tray"] )
 	love.graphics.rectangle( "fill", 0, 0, self.width, self.height )
-	love.graphics.setColor( editor.tab().style["Scrollbar.Slider"] )
+	love.graphics.setColor( editor.tab().style["editor:Scrollbar.Slider"] )
 	love.graphics.rectangle( "fill", SCROLLBAR_PADDING, SCROLLBAR_PADDING + self.yv, self.width - 2 * SCROLLBAR_PADDING, self.heightv )
 end
 
 function editor.scroll_bottom:onDraw()
-	love.graphics.setColor( editor.tab().style["Scrollbar.Tray"] )
+	love.graphics.setColor( editor.tab().style["editor:Scrollbar.Tray"] )
 	love.graphics.rectangle( "fill", 0, 0, self.width, self.height )
-	love.graphics.setColor( editor.tab().style["Scrollbar.Slider"] )
+	love.graphics.setColor( editor.tab().style["editor:Scrollbar.Slider"] )
 	love.graphics.rectangle( "fill", SCROLLBAR_PADDING + self.xv, SCROLLBAR_PADDING, self.widthv, self.height - 2 * SCROLLBAR_PADDING )
 end
 
@@ -103,7 +105,7 @@ end
 
 function editor.getContentWidth()
 	local tab = editor.tab()
-	local font = tab.style.font
+	local font = tab.style["editor:Font"]
 	local lines = tab.lines
 	local max = 0
 	
@@ -116,10 +118,23 @@ end
 
 function editor.getContentHeight()
 	local tab = editor.tab()
-	local font = tab.style.font
+	local font = tab.style["editor:Font"]
 	local lines = tab.lines
 
 	return #lines * font:getHeight()
+end
+
+function editor.getSideLineWidth()
+	local tab = editor.tab()
+	local font = tab.style["editor:Font"]
+	local padding2 = 2 * tab.style["editor:Lines.Padding"]
+	local line_area_width = padding2
+
+	for i = math.max( 2, #tab.lines - 9 ), #tab.lines do
+		line_area_width = math.max( line_area_width, font:getWidth( i ) + padding2 )
+	end
+
+	return line_area_width
 end
 
 function editor.getDisplayWidth()
@@ -199,20 +214,28 @@ function editor.panel:onUpdate( dt )
 end
 
 function editor.panel:onDraw(mode)
-	if mode == "after" then return end
+	if mode == "after" then
+		love.graphics.setColor( editor.tab().style["editor:Foreground"] )
+		love.graphics.rectangle( "line", 0, 0, editor.getDisplayWidth(), editor.getDisplayHeight() )
+		return
+	end
 
 	local tab = editor.tab()
-	local font = tab.style.font
-	local fontWidth, fontHeight = font:getWidth " ", font:getHeight()
+	local font = tab.style["editor:Font"]
+	local fontHeight = font:getHeight()
 	local minl = math.floor(tab.scrollY / fontHeight) + 1
 	local maxl = math.min( math.ceil((tab.scrollY + editor.getDisplayHeight()) / fontHeight) + 1, #tab.lines )
 	local cursors = tab.cursors
 	local cursors_sorted = cursor.sort( cursors )
 	local i, n = minl, 1
+	local line_area_width = editor.getSideLineWidth()
 
 	local displayWidth, displayHeight = self.width, self.height
 	local contentWidth, contentHeight = editor.getContentWidth(), editor.getContentHeight()
 	local reqh, reqv = scrollbar.required( displayWidth, displayHeight, contentWidth, contentHeight, SCROLLBAR_SIZE )
+
+	love.graphics.setColor( tab.style["editor:Background"] )
+	love.graphics.rectangle( "fill", 0, 0, editor.getDisplayWidth(), editor.getDisplayHeight() )
 
 	if reqh or reqv then
 		local  trayWidth =  displayWidth - 2 * SCROLLBAR_PADDING - (reqv and SCROLLBAR_SIZE or 0)
@@ -232,15 +255,15 @@ function editor.panel:onDraw(mode)
 	end
 
 	love.graphics.push()
-	love.graphics.translate( -tab.scrollX, -tab.scrollY )
+	love.graphics.translate( tab.style["editor:Lines.CodePadding"] + line_area_width - tab.scrollX, -tab.scrollY )
 
 	if editor.cursor_blink.state and not editor.is_mouse_dragging then
-		love.graphics.setColor( 0, 0, 0 ) -- change this!
+		love.graphics.setColor( tab.style["editor:Cursor"] ) -- change this!
 
 		for i, c in ipairs( cursors ) do
 			local cpos = cursor.clamp( tab.lines, c.position )
 			local cx, cy = cpos[3], cpos[2]
-			local x, y = text_window.locationToPixels( tab.lines, cx, cy, tab.style.font, tab.style.font:getWidth "    " )
+			local x, y = text_window.locationToPixels( tab.lines, cx, cy, font, font:getWidth( (" "):rep( TABWIDTH ) ) )
 
 			love.graphics.line( x, y, x, y + fontHeight )
 		end
@@ -250,7 +273,7 @@ function editor.panel:onDraw(mode)
 		rendering.formatted_text_line( formatting.parse( tab.formatting.lines[i] ), editor.tab().style, 0, (i-1) * font:getHeight() - tab.scrollX )
 	end
 
-	love.graphics.setColor( tab.style["Background.Selected"] ) -- change this!
+	love.graphics.setColor( tab.style["editor:Background.Selected"] ) -- change this!
 
 	while i <= maxl and n <= #cursors_sorted do
 		local min, max = cursor.order( cursors_sorted[n] )
@@ -277,15 +300,27 @@ function editor.panel:onDraw(mode)
 
 	love.graphics.pop()
 
-	love.graphics.setColor( 180, 180, 180 ) -- change this!
-	love.graphics.rectangle( "line", 0, 0, editor.getDisplayWidth(), editor.getDisplayHeight() )
+	love.graphics.setColor( tab.style["editor:Lines.Background"] )
+	love.graphics.rectangle( "fill", 0, 0, line_area_width, self.height )
+
+	love.graphics.push()
+	love.graphics.translate( 0, -tab.scrollY )
+	love.graphics.setColor( tab.style["editor:Lines.Foreground"] )
+
+	for i = minl, maxl do
+		local x = line_area_width - font:getWidth( i ) - tab.style["editor:Lines.Padding"]
+		love.graphics.print( tostring( i ), x, (i - 1) * fontHeight )
+	end
+
+	love.graphics.pop()
 
 end
 
 function editor.panel:onTouch( x, y )
 	local tab = editor.tab()
-	local char, line = text_window.pixelsToLocation( tab.lines, x + tab.scrollX, y + tab.scrollY, tab.style.font, tab.style.font:getWidth "    " )
-	local c = cursor.new()
+	local font = tab.style["editor:Font"]
+	local char, line = text_window.pixelsToLocation( tab.lines, x + tab.scrollX - editor.getSideLineWidth() - tab.style["editor:Lines.CodePadding"], y + tab.scrollY, font, font:getWidth "    " )
+	local new = util.isShiftHeld() and tab.cursors[#tab.cursors] or cursor.new()
 	local pos = cursor.toPosition( tab.lines, line, char )
 	local cursor_copy = {}
 
@@ -297,12 +332,15 @@ function editor.panel:onTouch( x, y )
 		cursor_copy[i] = tab.cursors[i]
 	end
 
-	c.position = editor.mouse_initial_location
+	new.selection = util.isShiftHeld() and new.position or false
+	new.position = editor.mouse_initial_location
+
+	cursor.setSelection( new, new.selection )
 	
 	if util.isCtrlHeld() then
-		tab.cursors[#tab.cursors + 1] = c
+		tab.cursors[#tab.cursors + 1] = new
 	else
-		tab.cursors = { c }
+		tab.cursors = { new }
 		editor.cursor_copy = {}
 	end
 
@@ -311,7 +349,8 @@ end
 
 function editor.panel:onMove( x, y )
 	local tab = editor.tab()
-	local char, line = text_window.pixelsToLocation( tab.lines, x + tab.scrollX, y + tab.scrollY, tab.style.font, tab.style.font:getWidth "    " )
+	local font = tab.style["editor:Font"]
+	local char, line = text_window.pixelsToLocation( tab.lines, x + tab.scrollX - editor.getSideLineWidth() - tab.style["editor:Lines.CodePadding"], y + tab.scrollY, font, font:getWidth "    " )
 	local pos = cursor.toPosition( tab.lines, line, char )
 	local c = cursor.new()
 
@@ -360,130 +399,12 @@ function editor.load()
 
 	editor.open( "untitled", INITIAL_TEXT )
 	editor.tab().formatting.formatter = formatting.newFormatter( require "resources.languages.lua" )
-
-	for k, v in pairs( require "resources.styles.default" ) do
-		editor.tab().style[k] = v
-	end
+	editor.tab().style = require "resources.styles.light"
 
 	formatting.format( editor.tab().lines, editor.tab().formatting )
 
-	event.bind( "editor:key:left", function()
-		plugin.api.cursor_left( false, false, false )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:right", function()
-		plugin.api.cursor_right( false, false, false )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:shift-left", function()
-		plugin.api.cursor_left( true, false, false )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:shift-right", function()
-		plugin.api.cursor_right( true, false, false )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:alt-left", function()
-		plugin.api.cursor_left( false, true, false )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:alt-right", function()
-		plugin.api.cursor_right( false, true, false )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:ctrl-left", function()
-		plugin.api.cursor_left( false, false, true )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:ctrl-right", function()
-		plugin.api.cursor_right( false, false, true )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:ctrl-shift-left", function()
-		plugin.api.cursor_left( true, false, true )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:ctrl-shift-right", function()
-		plugin.api.cursor_right( true, false, true )
-		plugin.api.cursor_onscreen()
-	end )
-
-	event.bind( "editor:key:up", function()
-		plugin.api.cursor_up( false, false, false )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:down", function()
-		plugin.api.cursor_down( false, false, false )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:alt-up", function()
-		plugin.api.cursor_up( false, true, false )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:alt-down", function()
-		plugin.api.cursor_down( false, true, false )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:shift-up", function()
-		plugin.api.cursor_up( true, false, false )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:shift-down", function()
-		plugin.api.cursor_down( true, false, false )
-		plugin.api.cursor_onscreen()
-	end )
-
-	event.bind( "editor:key:return", function()
-		plugin.api.write( "\n", true )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:tab", function()
-		plugin.api.write( "\t", true )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:backspace", function()
-		plugin.api.backspace( "\n", true )
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:delete", function()
-		plugin.api.delete( "\t", true )
-		plugin.api.cursor_onscreen()
-	end )
-
-	event.bind( "editor:key:kp1", function()
-		plugin.api.cursor_end()
-		plugin.api.cursor_onscreen()
-	end )
-	event.bind( "editor:key:kp7", function()
-		plugin.api.cursor_home()
-		plugin.api.cursor_onscreen()
-	end )
-
-	event.bind( "editor:key:ctrl-v", function()
-		plugin.api.write( love.system.getClipboardText(), false )
-		plugin.api.cursor_onscreen()
-	end )
-
-	event.bind( "editor:key:ctrl-c", function()
-		love.system.setClipboardText( plugin.api.text() )
-	end )
-
-	event.bind( "editor:key:ctrl-x", function()
-		love.system.setClipboardText( plugin.api.text() )
-		plugin.api.write( "", false )
-		plugin.api.cursor_onscreen()
-	end )
-
-	event.bind( "editor:key:ctrl-a", function()
-		local lines = plugin.api.count_lines()
-		local text = plugin.api.count_text( lines )
-
-		plugin.api.set_cursor( lines, text + 1, 1, 1 )
-	end )
-
-	event.bind( "editor:text", function(text)
-		plugin.api.write( text, false )
-	end )
+	require "resources.plugins.core"
+	require "resources.plugins.style-switcher"
 end
 
 return editor

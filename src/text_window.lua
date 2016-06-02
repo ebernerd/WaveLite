@@ -29,7 +29,7 @@ function text_window.locationToPixels( lines, x, y, font, tabWidth )
 
 	for i = 1, x - 1 do
 		local char = lines[y]:sub( i, i )
-		local charWidth = char == "\t" and tabWidth or font:getWidth( char )
+		local charWidth = char == "\t" and tabWidth or font:getWidth( char == "" and " " or char )
 		fWidth = fWidth + charWidth
 	end
 
