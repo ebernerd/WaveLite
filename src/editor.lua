@@ -6,6 +6,7 @@ local formatting = require "src.formatting"
 local text_editor = require "src.text_editor"
 local rendering = require "src.rendering"
 local text_window = require "src.text_window"
+local event = require "src.event"
 
 local DEFAULT_FONT = love.graphics.newFont( "resources/fonts/Hack.ttf", 15 )
 local PADDING_TOPLEFT = 100
@@ -209,126 +210,30 @@ function editor.panel:onRelease( x, y )
 end
 
 function editor.panel:onKeypress( key )
-
-	local tab = editor.tab()
-	local isMovementKey = key == "right" or key == "up" or key == "left" or key == "down"
-
-	if isMovementKey then
-
-		for i = 1, #tab.cursors do
-			if util.isAltHeld() then
-				local new = cursor.new()
-				new.position = cursor[key]( tab.lines, tab.cursors[i].position )
-				tab.cursors[#tab.cursors + 1] = new
-			else
-				local pos = util.isShiftHeld() and (tab.cursors[i].selection or tab.cursors[i].position) or false
-				local c = cursor.new()
-
-				c.position = cursor[key]( tab.lines, tab.cursors[i].position )
-				cursor.setSelection( c, pos )
-				tab.cursors[i] = c
-			end
-		end
-		editor.resetCursorBlink()
-		cursor.merge(tab.cursors)
-
-	elseif key == "return" then
-		text_editor.write( tab.lines, tab.formatting, tab.cursors, "\n", true )
-
-	elseif key == "backspace" then
-		for i = 1, #tab.cursors do
-			if not tab.cursors[i].selection then
-				tab.cursors[i].selection = cursor.left( tab.lines, tab.cursors[i].position )
-			end
-		end
-		text_editor.write( tab.lines, tab.formatting, tab.cursors, "", true )
-
-	elseif key == "delete" then
-		for i = 1, #tab.cursors do
-			if not tab.cursors[i].selection then
-				tab.cursors[i].selection = cursor.right( tab.lines, tab.cursors[i].position )
-			end
-		end
-		text_editor.write( tab.lines, tab.formatting, tab.cursors, "", true )
-
-	elseif key == "kp1" then
-		for i = 1, #tab.cursors do
-			local pos = util.isShiftHeld() and (tab.cursors[i].selection or tab.cursors[i].position) or false
-			local c = cursor.new()
-
-			c.position = { cursor.toPosition( tab.lines, tab.cursors[i].position[2], math.huge ), tab.cursors[i].position[2], math.huge }
-			cursor.setSelection( tab.cursors[i], pos )
-			tab.cursors[i] = c
-		end
-
-
-	elseif key == "kp7" then
-		for i = 1, #tab.cursors do
-			local pos = util.isShiftHeld() and (tab.cursors[i].selection or tab.cursors[i].position) or false
-			local c = cursor.new()
-
-			c.position = { cursor.toPosition( tab.lines, tab.cursors[i].position[2], 1 ), tab.cursors[i].position[2], 1 }
-			cursor.setSelection( tab.cursors[i], pos )
-			tab.cursors[i] = c
-		end
-
-	elseif key == "a" then
-		if util.isCtrlHeld() then
-			tab.cursors = { {
-				position = { cursor.toPosition( tab.lines, #tab.lines, #tab.lines[#tab.lines] + 1 ), #tab.lines, #tab.lines[#tab.lines] + 1 };
-				selection = { 1, 1, 1 };
-			} }
-		end
-
-	elseif key == "tab" then
-		text_editor.write( tab.lines, tab.formatting, tab.cursors, "\t", true )
-
-	elseif key == "v" then
-		if util.isCtrlHeld() then
-			text_editor.write( tab.lines, tab.formatting, tab.cursors, love.system.getClipboardText() )
-		end
-
-	elseif key == "c" then
-		if util.isCtrlHeld() then
-			local cursors = cursor.sort( tab.cursors )
-			local lines = {}
-
-			for i = 1, #cursors do
-				if cursors[i].selection then
-					local min, max = cursor.order( cursors[i] )
-					if min[2] == max[2] then
-						lines[#lines + 1] = tab.lines[min[2]]:sub( min[3], max[3] - 1 )
-					else
-						lines[#lines + 1] = tab.lines[min[2]]:sub( min[3] )
-
-						for n = min[2] + 1, max[2] - 1 do
-							lines[#lines + 1] = tab.lines[n]
-						end
-
-						lines[#lines + 1] = tab.lines[max[2]]:sub( 1, max[3] - 1 )
-					end
-				end
-			end
-
-			print( table.concat( lines, "\n" ) )
-
-			love.system.setClipboardText( table.concat( lines, "\n" ) )
-		end
-
-	end
-
+	event.invoke( "key:" ..
+		(util.isCtrlHeld() and "ctrl-" or "") ..
+		(util.isAltHeld() and "alt-" or "") .. 
+		(util.isShiftHeld() and "shift-" or "") ..
+		key, key
+	)
 end
 
 function editor.panel:onKeyrelease( key )
-
+	event.invoke( "key-release:" ..
+		(util.isCtrlHeld() and "ctrl-" or "") ..
+		(util.isAltHeld() and "alt-" or "") .. 
+		(util.isShiftHeld() and "shift-" or "") ..
+		key, key
+	)
 end
 
 function editor.panel:onTextInput( text )
-	local tab = editor.tab()
-	text_editor.write( tab.lines, tab.formatting, tab.cursors, text )
+	event.invoke( "text", text )
 end
 
 function editor.load()
+	local plugin = require "src.plugin"
+
 	editor.open( "untitled", [[
 this is a string
 of awesome text
@@ -338,6 +243,95 @@ that's really cool]] )
 	for k, v in pairs( require "resources.styles.default" ) do
 		editor.tab().style[k] = v
 	end
+
+	event.bind( "key:left", function()
+		plugin.api.cursor_left( false, false, false )
+	end )
+	event.bind( "key:right", function()
+		plugin.api.cursor_right( false, false, false )
+	end )
+	event.bind( "key:shift-left", function()
+		plugin.api.cursor_left( true, false, false )
+	end )
+	event.bind( "key:shift-right", function()
+		plugin.api.cursor_right( true, false, false )
+	end )
+	event.bind( "key:alt-left", function()
+		plugin.api.cursor_left( false, true, false )
+	end )
+	event.bind( "key:alt-right", function()
+		plugin.api.cursor_right( false, true, false )
+	end )
+	event.bind( "key:ctrl-left", function()
+		plugin.api.cursor_left( false, false, true )
+	end )
+	event.bind( "key:ctrl-right", function()
+		plugin.api.cursor_right( false, false, true )
+	end )
+	event.bind( "key:ctrl-shift-left", function()
+		plugin.api.cursor_left( true, false, true )
+	end )
+	event.bind( "key:ctrl-shift-right", function()
+		plugin.api.cursor_right( true, false, true )
+	end )
+
+	event.bind( "key:up", function()
+		plugin.api.cursor_up( false, false, false )
+	end )
+	event.bind( "key:down", function()
+		plugin.api.cursor_down( false, false, false )
+	end )
+	event.bind( "key:alt-up", function()
+		plugin.api.cursor_up( false, true, false )
+	end )
+	event.bind( "key:alt-down", function()
+		plugin.api.cursor_down( false, true, false )
+	end )
+	event.bind( "key:shift-up", function()
+		plugin.api.cursor_up( true, false, false )
+	end )
+	event.bind( "key:shift-down", function()
+		plugin.api.cursor_down( true, false, false )
+	end )
+
+	event.bind( "key:return", function()
+		plugin.api.write( "\n", true )
+	end )
+	event.bind( "key:tab", function()
+		plugin.api.write( "\t", true )
+	end )
+	event.bind( "key:backspace", function()
+		plugin.api.backspace( "\n", true )
+	end )
+	event.bind( "key:delete", function()
+		plugin.api.delete( "\t", true )
+	end )
+
+	event.bind( "key:kp1", function()
+		plugin.api.cursor_end()
+	end )
+	event.bind( "key:kp7", function()
+		plugin.api.cursor_home()
+	end )
+
+	event.bind( "text", function(text)
+		plugin.api.write( text, false )
+	end )
+
+	event.bind( "key:ctrl-v", function()
+		plugin.api.write( love.system.getClipboardText(), false )
+	end )
+
+	event.bind( "key:ctrl-c", function()
+		love.system.setClipboardText( plugin.api.text() )
+	end )
+
+	event.bind( "key:ctrl-a", function()
+		local lines = plugin.api.count_lines()
+		local text = plugin.api.count_text( lines )
+
+		plugin.api.set_cursor( lines, text + 1, 1, 1 )
+	end )
 end
 
 return editor
