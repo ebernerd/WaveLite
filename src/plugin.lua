@@ -4,6 +4,7 @@ local cursor = require "src.cursor"
 local event = require "src.event"
 local text_editor = require "src.text_editor"
 local util = require "src.util"
+local text_window = require "src.text_window"
 
 local plugin = {}
 
@@ -45,11 +46,11 @@ function plugin.api.cursor_left( select, create, word )
 	for i = 1, #tab.cursors do
 		local new = cursor.new()
 
+		new.position = cursor.left( tab.lines, tab.cursors[i].position )
+
 		if create then
-			new.position = cursor.left( tab.lines, tab.cursors[i].position )
 			tab.cursors[#tab.cursors + 1] = new
 		else
-			new.position = cursor.left( tab.lines, tab.cursors[i].position )
 			cursor.setSelection( new, select and (tab.cursors[i].selection or tab.cursors[i].position) or false )
 			tab.cursors[i] = new
 		end
@@ -67,11 +68,11 @@ function plugin.api.cursor_right( select, create, word )
 	for i = 1, #tab.cursors do
 		local new = cursor.new()
 
+		new.position = cursor.right( tab.lines, tab.cursors[i].position )
+
 		if create then
-			new.position = cursor.right( tab.lines, tab.cursors[i].position )
 			tab.cursors[#tab.cursors + 1] = new
 		else
-			new.position = cursor.right( tab.lines, tab.cursors[i].position )
 			cursor.setSelection( new, select and (tab.cursors[i].selection or tab.cursors[i].position) or false )
 			tab.cursors[i] = new
 		end
@@ -87,11 +88,24 @@ function plugin.api.cursor_up( select, create )
 	for i = 1, #tab.cursors do
 		local new = cursor.new()
 
+		if tab.cursors[i].position[2] > 1 then
+			local cline, cchar = tab.cursors[i].position[2], tab.cursors[i].position[2] > 1 and tab.cursors[i].position[3] or 1
+			local x, y = text_window.locationToPixels( tab.lines, cchar, cline, tab.style.font, tab.style.font:getWidth "    " )
+			local char, line = text_window.pixelsToLocation( tab.lines, x, y - (cline > 1 and tab.style.font:getHeight() or 0), tab.style.font, tab.style.font:getWidth "    " )
+
+			if x >= text_window.locationToPixels( tab.lines, #tab.lines[cline] + 1, cline, tab.style.font, tab.style.font:getWidth "    " ) then
+				char = cchar
+			end
+
+			new.position = { cursor.toPosition( tab.lines, line, char ), line, char }
+
+		else
+			new.position = { 1, 1, 1 }
+		end
+
 		if create then
-			new.position = cursor.up( tab.lines, tab.cursors[i].position )
 			tab.cursors[#tab.cursors + 1] = new
 		else
-			new.position = cursor.up( tab.lines, tab.cursors[i].position )
 			cursor.setSelection( new, select and (tab.cursors[i].selection or tab.cursors[i].position) or false )
 			tab.cursors[i] = new
 		end
@@ -107,11 +121,24 @@ function plugin.api.cursor_down( select, create )
 	for i = 1, #tab.cursors do
 		local new = cursor.new()
 
+		if tab.cursors[i].position[2] < #tab.lines then
+			local cline, cchar = tab.cursors[i].position[2], tab.cursors[i].position[2] < #tab.lines and tab.cursors[i].position[3] or #tab.lines[#tab.lines] + 1
+			local x, y = text_window.locationToPixels( tab.lines, cchar, cline, tab.style.font, tab.style.font:getWidth "    " )
+			local char, line = text_window.pixelsToLocation( tab.lines, x, y + (cline < #tab.lines and tab.style.font:getHeight() or 0), tab.style.font, tab.style.font:getWidth "    " )
+
+			if x >= text_window.locationToPixels( tab.lines, #tab.lines[cline] + 1, cline, tab.style.font, tab.style.font:getWidth "    " ) then
+				char = cchar
+			end
+
+			new.position = { cursor.toPosition( tab.lines, line, char ), line, char }
+
+		else
+			new.position = { cursor.toPosition( #tab.lines, #tab.lines[#tab.lines] + 1 ), #tab.lines, #tab.lines[#tab.lines] + 1 }
+		end
+		
 		if create then
-			new.position = cursor.down( tab.lines, tab.cursors[i].position )
 			tab.cursors[#tab.cursors + 1] = new
 		else
-			new.position = cursor.down( tab.lines, tab.cursors[i].position )
 			cursor.setSelection( new, select and (tab.cursors[i].selection or tab.cursors[i].position) or false )
 			tab.cursors[i] = new
 		end
@@ -201,12 +228,20 @@ function plugin.api.text()
 	return table.concat( lines, "\n" )
 end
 
+function plugin.api.text_line( line )
+	return editor.tab().lines[line] or ""
+end
+
 function plugin.api.count_lines()
 	return #editor.tab().lines
 end
 
 function plugin.api.count_text( line )
 	return #(editor.tab().lines[line] or "")
+end
+
+function plugin.api.begin_mouse_selection( line, char )
+
 end
 
 return plugin

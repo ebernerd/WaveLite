@@ -117,8 +117,8 @@ function editor.panel:onDraw(mode)
 
 			for i, c in ipairs( cursors ) do
 				local cpos = cursor.clamp( tab.lines, c.position )
-				local cx, cy = #tab.lines[cpos[2]]:sub(1, cpos[3] - 1):gsub( "\t", TABS ) + 1, cpos[2]
-				local x, y = text_window.locationToPixels( tab.lines, cx, cy, tab.style.font )
+				local cx, cy = cpos[3], cpos[2]
+				local x, y = text_window.locationToPixels( tab.lines, cx, cy, tab.style.font, tab.style.font:getWidth "    " )
 
 				love.graphics.line( x, y, x, y + fontHeight )
 			end
@@ -137,10 +137,10 @@ function editor.panel:onDraw(mode)
 			local min, max = cursor.order( cursors_sorted[n] )
 
 			if max[2] >= i and min[2] <= i then
-				local start = min[2] == i and #tab.lines[i]:sub(1, min[3] - 1):gsub("\t", TABS) + 1 or 1
-				local finish = max[2] == i and #tab.lines[i]:sub(1, max[3] - 1):gsub("\t", TABS) + 1 or #tab.lines[i]:gsub("\t", TABS) + 2
-				local x1, y1 = text_window.locationToPixels( tab.lines, start, i, font )
-				local x2, y2 = text_window.locationToPixels( tab.lines, finish, i, font )
+				local start = min[2] == i and #tab.lines[i]:sub(1, min[3] - 1) + 1 or 1
+				local finish = max[2] == i and #tab.lines[i]:sub(1, max[3] - 1) + 1 or #tab.lines[i] + 2
+				local x1, y1 = text_window.locationToPixels( tab.lines, start, i, font, font:getWidth "    " )
+				local x2, y2 = text_window.locationToPixels( tab.lines, finish, i, font, font:getWidth "    " )
 
 				love.graphics.rectangle( "fill", x1, y1, x2 - x1, fontHeight )
 
@@ -160,7 +160,7 @@ end
 
 function editor.panel:onTouch( x, y )
 	local tab = editor.tab()
-	local char, line = text_window.pixelsToLocation( tab.lines, x + tab.scrollX, y + tab.scrollY, tab.style.font )
+	local char, line = text_window.pixelsToLocation( tab.lines, x + tab.scrollX, y + tab.scrollY, tab.style.font, tab.style.font:getWidth "    " )
 	local c = cursor.new()
 	local pos = cursor.toPosition( tab.lines, line, char )
 	local cursor_copy = {}
@@ -187,7 +187,7 @@ end
 
 function editor.panel:onMove( x, y )
 	local tab = editor.tab()
-	local char, line = text_window.pixelsToLocation( tab.lines, x + tab.scrollX, y + tab.scrollY, tab.style.font )
+	local char, line = text_window.pixelsToLocation( tab.lines, x + tab.scrollX, y + tab.scrollY, tab.style.font, tab.style.font:getWidth "    " )
 	local pos = cursor.toPosition( tab.lines, line, char )
 	local c = cursor.new()
 
@@ -210,7 +210,7 @@ function editor.panel:onRelease( x, y )
 end
 
 function editor.panel:onKeypress( key )
-	event.invoke( "key:" ..
+	event.invoke( "editor:key:" ..
 		(util.isCtrlHeld() and "ctrl-" or "") ..
 		(util.isAltHeld() and "alt-" or "") .. 
 		(util.isShiftHeld() and "shift-" or "") ..
@@ -219,7 +219,7 @@ function editor.panel:onKeypress( key )
 end
 
 function editor.panel:onKeyrelease( key )
-	event.invoke( "key-release:" ..
+	event.invoke( "editor:key-release:" ..
 		(util.isCtrlHeld() and "ctrl-" or "") ..
 		(util.isAltHeld() and "alt-" or "") .. 
 		(util.isShiftHeld() and "shift-" or "") ..
@@ -228,7 +228,7 @@ function editor.panel:onKeyrelease( key )
 end
 
 function editor.panel:onTextInput( text )
-	event.invoke( "text", text )
+	event.invoke( "editor:text", text )
 end
 
 function editor.load()
@@ -244,93 +244,100 @@ that's really cool]] )
 		editor.tab().style[k] = v
 	end
 
-	event.bind( "key:left", function()
+	formatting.format( editor.tab().lines, editor.tab().formatting )
+
+	event.bind( "editor:key:left", function()
 		plugin.api.cursor_left( false, false, false )
 	end )
-	event.bind( "key:right", function()
+	event.bind( "editor:key:right", function()
 		plugin.api.cursor_right( false, false, false )
 	end )
-	event.bind( "key:shift-left", function()
+	event.bind( "editor:key:shift-left", function()
 		plugin.api.cursor_left( true, false, false )
 	end )
-	event.bind( "key:shift-right", function()
+	event.bind( "editor:key:shift-right", function()
 		plugin.api.cursor_right( true, false, false )
 	end )
-	event.bind( "key:alt-left", function()
+	event.bind( "editor:key:alt-left", function()
 		plugin.api.cursor_left( false, true, false )
 	end )
-	event.bind( "key:alt-right", function()
+	event.bind( "editor:key:alt-right", function()
 		plugin.api.cursor_right( false, true, false )
 	end )
-	event.bind( "key:ctrl-left", function()
+	event.bind( "editor:key:ctrl-left", function()
 		plugin.api.cursor_left( false, false, true )
 	end )
-	event.bind( "key:ctrl-right", function()
+	event.bind( "editor:key:ctrl-right", function()
 		plugin.api.cursor_right( false, false, true )
 	end )
-	event.bind( "key:ctrl-shift-left", function()
+	event.bind( "editor:key:ctrl-shift-left", function()
 		plugin.api.cursor_left( true, false, true )
 	end )
-	event.bind( "key:ctrl-shift-right", function()
+	event.bind( "editor:key:ctrl-shift-right", function()
 		plugin.api.cursor_right( true, false, true )
 	end )
 
-	event.bind( "key:up", function()
+	event.bind( "editor:key:up", function()
 		plugin.api.cursor_up( false, false, false )
 	end )
-	event.bind( "key:down", function()
+	event.bind( "editor:key:down", function()
 		plugin.api.cursor_down( false, false, false )
 	end )
-	event.bind( "key:alt-up", function()
+	event.bind( "editor:key:alt-up", function()
 		plugin.api.cursor_up( false, true, false )
 	end )
-	event.bind( "key:alt-down", function()
+	event.bind( "editor:key:alt-down", function()
 		plugin.api.cursor_down( false, true, false )
 	end )
-	event.bind( "key:shift-up", function()
+	event.bind( "editor:key:shift-up", function()
 		plugin.api.cursor_up( true, false, false )
 	end )
-	event.bind( "key:shift-down", function()
+	event.bind( "editor:key:shift-down", function()
 		plugin.api.cursor_down( true, false, false )
 	end )
 
-	event.bind( "key:return", function()
+	event.bind( "editor:key:return", function()
 		plugin.api.write( "\n", true )
 	end )
-	event.bind( "key:tab", function()
+	event.bind( "editor:key:tab", function()
 		plugin.api.write( "\t", true )
 	end )
-	event.bind( "key:backspace", function()
+	event.bind( "editor:key:backspace", function()
 		plugin.api.backspace( "\n", true )
 	end )
-	event.bind( "key:delete", function()
+	event.bind( "editor:key:delete", function()
 		plugin.api.delete( "\t", true )
 	end )
 
-	event.bind( "key:kp1", function()
+	event.bind( "editor:key:kp1", function()
 		plugin.api.cursor_end()
 	end )
-	event.bind( "key:kp7", function()
+	event.bind( "editor:key:kp7", function()
 		plugin.api.cursor_home()
 	end )
 
-	event.bind( "text", function(text)
-		plugin.api.write( text, false )
-	end )
-
-	event.bind( "key:ctrl-v", function()
+	event.bind( "editor:key:ctrl-v", function()
 		plugin.api.write( love.system.getClipboardText(), false )
 	end )
 
-	event.bind( "key:ctrl-c", function()
+	event.bind( "editor:key:ctrl-c", function()
 		love.system.setClipboardText( plugin.api.text() )
 	end )
 
-	event.bind( "key:ctrl-a", function()
+	event.bind( "editor:key:ctrl-x", function()
+		love.system.setClipboardText( plugin.api.text() )
+		plugin.api.write( "", false )
+	end )
+
+	event.bind( "editor:key:ctrl-a", function()
 		local lines = plugin.api.count_lines()
 		local text = plugin.api.count_text( lines )
 
 		plugin.api.set_cursor( lines, text + 1, 1, 1 )
+	end )
+
+	event.bind( "editor:text", function(text)
+		plugin.api.write( text, false )
 	end )
 end
 
