@@ -3,6 +3,7 @@ local util = require "src.util"
 local rgb = util.rgb
 
 return {
+	-- syntax highlighting
 	["Keyword"] = rgb( 0xc53d67 );
 	["Keyword.Loop"] = rgb( 0xc53d67 );
 	["Keyword.Function"] = rgb( 0xc53d67 );
@@ -17,12 +18,14 @@ return {
 	["Operator"] = rgb( 0xc53d67 );
 	["Symbol"] = rgb( 0xc53d67 );
 	["Comment"] = rgb( 0x919d9f );
+	["default"] = rgb( 0x404040 );
 
-	--[[_Default = rgb( 0x404040 );
-	_Foreground = rgb( 0x404040 );
-	_Background = rgb( 0xfafafa );
-	_BackgroundSelected = rgb( 0xa0b0f0 );
-	_ForegroundSelected = rgb( 0xffffff );
-	_ScrollbarTray = rgb( 0xdddddd );
-	_ScrollbarSlider = rgb( 0xcccccc );]]
+	-- editor settings
+	["Foreground"] = rgb( 0x404040 );
+	["Background"] = rgb( 0xfafafa );
+	["Background.Selected"] = { 80, 160, 255, 40 };
+	["Scrollbar.Tray"] = rgb( 0xdddddd );
+	["Scrollbar.Slider"] = rgb( 0xbbbbbb );
+
+	["font"] = love.graphics.newFont( "resources/fonts/Hack.ttf", 15 );
 }

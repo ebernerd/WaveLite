@@ -133,7 +133,7 @@ function plugin.api.cursor_down( select, create )
 			new.position = { cursor.toPosition( tab.lines, line, char ), line, char }
 
 		else
-			new.position = { cursor.toPosition( #tab.lines, #tab.lines[#tab.lines] + 1 ), #tab.lines, #tab.lines[#tab.lines] + 1 }
+			new.position = { cursor.toPosition( tab.lines, #tab.lines, #tab.lines[#tab.lines] + 1 ), #tab.lines, #tab.lines[#tab.lines] + 1 }
 		end
 		
 		if create then
@@ -226,6 +226,22 @@ function plugin.api.text()
 	end
 
 	return table.concat( lines, "\n" )
+end
+
+function plugin.api.cursor_onscreen()
+	local tab = editor.tab()
+	local cursor = tab.cursors[#tab.cursors]
+	local line = cursor.position[2]
+	local char = cursor.position[3]
+	local font = tab.style.font
+	local x = font:getWidth( tab.lines[line]:sub( 1, char - 1 ):gsub( "\t", "    " ) )
+	local y = (line - 1) * font:getHeight()
+
+	if tab.scrollY > y then
+		tab.scrollY = y
+	elseif tab.scrollY + editor.getDisplayHeight() - font:getHeight() - 16 < y then
+		tab.scrollY = y - editor.getDisplayHeight() + font:getHeight() + 16
+	end
 end
 
 function plugin.api.text_line( line )
