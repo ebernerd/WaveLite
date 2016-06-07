@@ -108,13 +108,13 @@ function formatting.newFormatter( lang )
 					return res
 				end
 
-			elseif line:find( "^%d*%.?%d", i ) then
-				local match = line:match( "^%d*%.?%d+e[%+%-]%d+", i ) or line:match( "^%d*%.?%d+", i )
+			elseif line:find( "^0x%x", i ) then
+				local match = line:match( "^0x%x+", i )
 				res = res .. "{syntax:Constant.Number;" .. match .. "}"
 				i = i + #match
 
-			elseif line:find( "^0x%x", i ) then
-				local match = line:match( "^0x%x+", i )
+			elseif line:find( "^%d*%.?%d", i ) then
+				local match = line:match( "^%d*%.?%d+e[%+%-]%d+", i ) or line:match( "^%d*%.?%d+", i )
 				res = res .. "{syntax:Constant.Number;" .. match .. "}"
 				i = i + #match
 

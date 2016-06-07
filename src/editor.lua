@@ -8,6 +8,7 @@ local rendering = require "src.rendering"
 local text_window = require "src.text_window"
 local event = require "src.event"
 local scrollbar = require "src.scrollbar"
+local libstyle = require "src.style"
 
 local PADDING_TOPLEFT = 100
 local PADDING_BOTTOMRIGHT = 20
@@ -48,8 +49,10 @@ local INITIAL_TEXT = [==[
 		Events should have selectors, something like this
 		event.bind("editor:key:ctrl-l#language:lua;style:blah;filename:this")
 
-		The UI needs work. Add in stuff for adding buttons on the top, and add an info line on the bottom.
+		The UI needs work. Add in stuff for adding buttons on the top.
 		Add some kind of list framework on the side too.
+		Need to add the bar on the bottom. It'll have methods to add stuff to the left/right sides.
+		It should space them out evenly and clip middle ones if necessary
 
 		Ctrl-z, Ctrl-y, history, shizzle like that
 
@@ -73,7 +76,7 @@ local editor = {}
 editor.tabs = {}
 editor.workingtab = 1
 
-editor.panel = UIPanel.body:add( UIPanel.new() )
+editor.panel = UIPanel.new() or UIPanel.body:add( UIPanel.new() )
 editor.panel.enable_keyboard = true
 
 editor.scroll_right = editor.panel:add( UIPanel.new() )
@@ -102,16 +105,16 @@ function editor.scroll_right:onParentResized()
 end
 
 function editor.scroll_right:onDraw()
-	love.graphics.setColor( editor.tab().style["editor:Scrollbar.Tray"] )
+	love.graphics.setColor( libstyle.get( editor.tab().style, "editor:Scrollbar.Tray" ) )
 	love.graphics.rectangle( "fill", 0, 0, self.width, self.height )
-	love.graphics.setColor( editor.tab().style["editor:Scrollbar.Slider"] )
+	love.graphics.setColor( libstyle.get( editor.tab().style, "editor:Scrollbar.Slider" ) )
 	love.graphics.rectangle( "fill", SCROLLBAR_PADDING, SCROLLBAR_PADDING + self.yv, self.width - 2 * SCROLLBAR_PADDING, self.heightv )
 end
 
 function editor.scroll_bottom:onDraw()
-	love.graphics.setColor( editor.tab().style["editor:Scrollbar.Tray"] )
+	love.graphics.setColor( libstyle.get( editor.tab().style, "editor:Scrollbar.Tray" ) )
 	love.graphics.rectangle( "fill", 0, 0, self.width, self.height )
-	love.graphics.setColor( editor.tab().style["editor:Scrollbar.Slider"] )
+	love.graphics.setColor( libstyle.get( editor.tab().style, "editor:Scrollbar.Slider" ) )
 	love.graphics.rectangle( "fill", SCROLLBAR_PADDING + self.xv, SCROLLBAR_PADDING, self.widthv, self.height - 2 * SCROLLBAR_PADDING )
 end
 
@@ -122,7 +125,7 @@ end
 
 function editor.getContentWidth()
 	local tab = editor.tab()
-	local font = tab.style["editor:Font"]
+	local font = libstyle.get( tab.style, "editor:Font" )
 	local lines = tab.lines
 	local max = 0
 	
@@ -135,7 +138,7 @@ end
 
 function editor.getContentHeight()
 	local tab = editor.tab()
-	local font = tab.style["editor:Font"]
+	local font = libstyle.get( tab.style, "editor:Font" )
 	local lines = tab.lines
 
 	return #lines * font:getHeight()
@@ -143,8 +146,8 @@ end
 
 function editor.getSideLineWidth()
 	local tab = editor.tab()
-	local font = tab.style["editor:Font"]
-	local padding2 = 2 * tab.style["editor:Lines.Padding"]
+	local font = libstyle.get( tab.style, "editor:Font" )
+	local padding2 = 2 * libstyle.get( tab.style, "editor:Lines.Padding" )
 	local line_area_width = padding2
 
 	for i = math.max( 1, #tab.lines - 9 ), #tab.lines do
@@ -232,13 +235,13 @@ end
 
 function editor.panel:onDraw(mode)
 	if mode == "after" then
-		love.graphics.setColor( editor.tab().style["editor:Foreground"] )
+		love.graphics.setColor( libstyle.get( editor.tab().style, "editor:Foreground" ) )
 		love.graphics.rectangle( "line", 0, 0, editor.getDisplayWidth(), editor.getDisplayHeight() )
 		return
 	end
 
 	local tab = editor.tab()
-	local font = tab.style["editor:Font"]
+	local font = libstyle.get( tab.style, "editor:Font" )
 	local fontHeight = font:getHeight()
 	local minl = math.floor(tab.scrollY / fontHeight) + 1
 	local maxl = math.min( math.ceil((tab.scrollY + editor.getDisplayHeight()) / fontHeight) + 1, #tab.lines )
@@ -251,7 +254,7 @@ function editor.panel:onDraw(mode)
 	local contentWidth, contentHeight = editor.getContentWidth(), editor.getContentHeight()
 	local reqh, reqv = scrollbar.required( displayWidth, displayHeight, contentWidth, contentHeight, SCROLLBAR_SIZE )
 
-	love.graphics.setColor( tab.style["editor:Background"] )
+	love.graphics.setColor( libstyle.get( tab.style, "editor:Background" ) )
 	love.graphics.rectangle( "fill", 0, 0, editor.getDisplayWidth(), editor.getDisplayHeight() )
 
 	if reqh or reqv then
@@ -272,10 +275,10 @@ function editor.panel:onDraw(mode)
 	end
 
 	love.graphics.push()
-	love.graphics.translate( tab.style["editor:Lines.CodePadding"] + line_area_width - tab.scrollX, -tab.scrollY )
+	love.graphics.translate( libstyle.get( tab.style, "editor:Lines.CodePadding" ) + line_area_width - tab.scrollX, -tab.scrollY )
 
 	if editor.cursor_blink.state and not editor.is_mouse_dragging then
-		love.graphics.setColor( tab.style["editor:Cursor"] ) -- change this!
+		love.graphics.setColor( libstyle.get( tab.style, "editor:Cursor" ) ) -- change this!
 
 		for i, c in ipairs( cursors ) do
 			local cpos = cursor.clamp( tab.lines, c.position )
@@ -290,7 +293,7 @@ function editor.panel:onDraw(mode)
 		rendering.formatted_text_line( formatting.parse( tab.formatting.lines[i] ), editor.tab().style, 0, (i-1) * font:getHeight() - tab.scrollX )
 	end
 
-	love.graphics.setColor( tab.style["editor:Background.Selected"] ) -- change this!
+	love.graphics.setColor( libstyle.get( tab.style, "editor:Background.Selected" ) ) -- change this!
 
 	while i <= maxl and n <= #cursors_sorted do
 		local min, max = cursor.order( cursors_sorted[n] )
@@ -317,15 +320,15 @@ function editor.panel:onDraw(mode)
 
 	love.graphics.pop()
 
-	love.graphics.setColor( tab.style["editor:Lines.Background"] )
+	love.graphics.setColor( libstyle.get( tab.style, "editor:Lines.Background" ) )
 	love.graphics.rectangle( "fill", 0, 0, line_area_width, self.height )
 
 	love.graphics.push()
 	love.graphics.translate( 0, -tab.scrollY )
-	love.graphics.setColor( tab.style["editor:Lines.Foreground"] )
+	love.graphics.setColor( libstyle.get( tab.style, "editor:Lines.Foreground" ) )
 
 	for i = minl, maxl do
-		local x = line_area_width - font:getWidth( i ) - tab.style["editor:Lines.Padding"]
+		local x = line_area_width - font:getWidth( i ) - libstyle.get( tab.style, "editor:Lines.Padding" )
 		love.graphics.print( tostring( i ), x, (i - 1) * fontHeight )
 	end
 
@@ -335,8 +338,8 @@ end
 
 function editor.panel:onTouch( x, y )
 	local tab = editor.tab()
-	local font = tab.style["editor:Font"]
-	local char, line = text_window.pixelsToLocation( tab.lines, x + tab.scrollX - editor.getSideLineWidth() - tab.style["editor:Lines.CodePadding"], y + tab.scrollY, font, font:getWidth "    " )
+	local font = libstyle.get( tab.style, "editor:Font" )
+	local char, line = text_window.pixelsToLocation( tab.lines, x + tab.scrollX - editor.getSideLineWidth() - libstyle.get( tab.style, "editor:Lines.CodePadding" ), y + tab.scrollY, font, font:getWidth "    " )
 	local new = util.isShiftHeld() and tab.cursors[#tab.cursors] or cursor.new()
 	local pos = cursor.toPosition( tab.lines, line, char )
 	local cursor_copy = {}
@@ -366,8 +369,8 @@ end
 
 function editor.panel:onMove( x, y )
 	local tab = editor.tab()
-	local font = tab.style["editor:Font"]
-	local char, line = text_window.pixelsToLocation( tab.lines, x + tab.scrollX - editor.getSideLineWidth() - tab.style["editor:Lines.CodePadding"], y + tab.scrollY, font, font:getWidth "    " )
+	local font = libstyle.get( tab.style, "editor:Font" )
+	local char, line = text_window.pixelsToLocation( tab.lines, x + tab.scrollX - editor.getSideLineWidth() - libstyle.get( tab.style, "editor:Lines.CodePadding" ), y + tab.scrollY, font, font:getWidth "    " )
 	local pos = cursor.toPosition( tab.lines, line, char )
 	local c = cursor.new()
 

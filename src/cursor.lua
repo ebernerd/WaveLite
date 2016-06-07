@@ -1,8 +1,11 @@
 
+local ID = 0
+local function newID() ID = ID + 1 return ID end
+
 local cursor = {}
 
-function cursor.new()
-	return { position = { 1, 1, 1 }, selection = false }
+function cursor.new( ID )
+	return { ID = ID or newID(), position = { 1, 1, 1, 1 }, selection = false }
 end
 
 function cursor.setSelection( c, s )
@@ -68,6 +71,8 @@ function cursor.merge( cursors ) -- takes a {cursor}
 			local minI, maxI = cursor.order( cursors[i] )
 			local minN, maxN = cursor.order( cursors[n] )
 
+			print( minI[1], minN[1] )
+
 			if minI[1] <= maxN[1] and minN[1] <= maxI[1] then
 				local min = cursor.smaller( minI, minN )
 				local max = cursor .larger( maxI, maxN )
@@ -92,7 +97,7 @@ function cursor.toLineChar( lines, position )
 		end
 	end
 
-	return line, math.min( position, #lines[line] + 1 )
+	return line, math.min( position, #lines[line] + 1 ), position
 end
 
 function cursor.toPosition( lines, line, char )
@@ -108,7 +113,8 @@ function cursor.toPosition( lines, line, char )
 end
 
 function cursor.clamp( lines, c ) -- takes a cursor position or selection
-	return { c[1], cursor.toLineChar( lines, c[1] ) }
+	local diff = math.min( 0, #lines[c[2]] + 1 - c[4] )
+	return { c[1] + diff, c[2], c[4] + diff, c[4] }
 end
 
 function cursor.up( lines, c )
@@ -125,9 +131,9 @@ end
 
 function cursor.left( lines, c )
 	if c[3] > 1 then
-		return { c[1] - 1, c[2], math.min( c[3], #lines[c[2]] + 1 ) - 1 }
+		return { c[1] - 1, c[2], c[3] - 1, c[3] - 1 }
 	elseif c[2] > 1 then
-		return { cursor.toPosition( lines, c[2] - 1, #lines[c[2] - 1] + 1 ), c[2] - 1, #lines[c[2] - 1] + 1 }
+		return { cursor.toPosition( lines, c[2] - 1, #lines[c[2] - 1] + 1 ), c[2] - 1, #lines[c[2] - 1] + 1, #lines[c[2] - 1] + 1 }
 	else
 		return c
 	end
@@ -135,9 +141,9 @@ end
 
 function cursor.right( lines, c )
 	if c[3] <= #lines[c[2]] then
-		return { c[1] + 1, c[2], c[3] + 1 }
+		return { c[1] + 1, c[2], c[3] + 1, c[3] + 1 }
 	elseif c[2] < #lines then
-		return { c[1] + 1, c[2] + 1, 1 }
+		return { c[1] + 1, c[2] + 1, 1, 1 }
 	else
 		return c
 	end

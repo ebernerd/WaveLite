@@ -1,6 +1,7 @@
 
 local touches = {}
 local scissors = {}
+local focussed = nil
 
 local function globalX( child )
 	return child.x + ( child.parent and globalX( child.parent ) or 0 )
@@ -46,7 +47,7 @@ local function newUIPanel( x, y, width, height )
 	panel.enable_keyboard = false
 	panel.enable_mouse = true
 
-	panel.colour = { 240, 240, 240 }
+	panel.colour = { 250, 250, 250 }
 
 	function panel:add( child )
 		self.children[#self.children + 1] = child
@@ -61,6 +62,16 @@ local function newUIPanel( x, y, width, height )
 				table.remove( self.children, i )
 				return child
 			end
+		end
+	end
+
+	function panel:focus()
+		if focussed ~= self then
+			if focussed then
+				focussed:onUnFocus( self )
+			end
+			self:onFocus( focussed )
+			focussed = self
 		end
 	end
 
@@ -104,11 +115,15 @@ local function newUIPanel( x, y, width, height )
 
 	end
 
-	function panel:onDraw(mode)
-		if mode == "before" then
+	function panel:onDraw( stage )
+		if stage == "before" then
 			love.graphics.setColor( self.colour )
 			love.graphics.rectangle( "fill", 0, 0, self.width, self.height )
 		end
+	end
+
+	function panel:onWheelMoved( x, y )
+
 	end
 
 	function panel:onTouch( x, y, ID )
@@ -149,6 +164,14 @@ local function newUIPanel( x, y, width, height )
 
 	end
 
+	function panel:onFocus( sibling )
+
+	end
+
+	function panel:onUnFocus( sibling )
+
+	end
+
 	return panel
 
 end
@@ -157,6 +180,12 @@ local main = newUIPanel( 0, 0, 0, 0 )
 
 function main:onUpdate()
 	self:resize( love.window.getMode() )
+end
+
+function main:onWheelMoved( x, y )
+	if focussed then
+		focussed:onWheelMoved( x, y )
+	end
 end
 
 function main:onTouch( x, y, ID )
@@ -184,26 +213,20 @@ function main:onMove( x, y )
 end
 
 function main:onKeypress( key )
-	local child = findKeyRecursive( self.children )
-
-	if child then
-		child:onKeypress( key )
+	if focussed then
+		focussed:onKeypress( key )
 	end
 end
 
 function main:onKeyrelease( key )
-	local child = findKeyRecursive( self.children )
-
-	if child then
-		child:onKeyrelease( key )
+	if focussed then
+		focussed:onKeyrelease( key )
 	end
 end
 
 function main:onTextInput( key )
-	local child = findKeyRecursive( self.children )
-
-	if child then
-		child:onTextInput( key )
+	if focussed then
+		focussed:onTextInput( key )
 	end
 end
 

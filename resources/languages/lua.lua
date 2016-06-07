@@ -32,6 +32,8 @@ return formatting.newFormatter {
 		["true"] = "syntax:Constant.Boolean";
 		["false"] = "syntax:Constant.Boolean";
 		["nil"] = "syntax:Constant.Null";
+
+		["self"] = "syntax:Constant.Reference";
 	};
 
 	symbols = {

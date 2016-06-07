@@ -5,6 +5,7 @@ local event = require "src.event"
 local text_editor = require "src.text_editor"
 local util = require "src.util"
 local text_window = require "src.text_window"
+local libstyle = require "src.style"
 
 local plugin = {}
 
@@ -42,7 +43,7 @@ function plugin.api.cursor_left( select, create, word )
 	if word then return error "movement by word isn't implemented yet" end
 
 	local tab = editor.tab()
-	local font = tab.style["editor:Font"]
+	local font = libstyle.get( tab.style, "editor:Font" )
 
 	for i = 1, #tab.cursors do
 		local new = cursor.new()
@@ -65,7 +66,7 @@ function plugin.api.cursor_right( select, create, word )
 	if word then return error "movement by word isn't implemented yet" end
 
 	local tab = editor.tab()
-	local font = tab.style["editor:Font"]
+	local font = libstyle.get( tab.style, "editor:Font" )
 
 	for i = 1, #tab.cursors do
 		local new = cursor.new()
@@ -86,7 +87,7 @@ end
 
 function plugin.api.cursor_up( select, create )
 	local tab = editor.tab()
-	local font = tab.style["editor:Font"]
+	local font = libstyle.get( tab.style, "editor:Font" )
 
 	for i = 1, #tab.cursors do
 		local new = cursor.new()
@@ -120,7 +121,7 @@ end
 
 function plugin.api.cursor_down( select, create )
 	local tab = editor.tab()
-	local font = tab.style["editor:Font"]
+	local font = libstyle.get( tab.style, "editor:Font" )
 
 	for i = 1, #tab.cursors do
 		local new = cursor.new()
@@ -178,35 +179,6 @@ function plugin.api.cursor_home()
 	end
 end
 
-function plugin.api.write( text, text_per_cursor )
-	local tab = editor.tab()
-	text_editor.write( tab.lines, tab.formatting, tab.cursors, text, text_per_cursor )
-end
-
-function plugin.api.backspace()
-	local tab = editor.tab()
-
-	for i = 1, #tab.cursors do
-		if not tab.cursors[i].selection then
-			tab.cursors[i].selection = cursor.left( tab.lines, tab.cursors[i].position )
-		end
-	end
-
-	text_editor.write( tab.lines, tab.formatting, tab.cursors, "", true )
-end
-
-function plugin.api.delete()
-	local tab = editor.tab()
-
-	for i = 1, #tab.cursors do
-		if not tab.cursors[i].selection then
-			tab.cursors[i].selection = cursor.right( tab.lines, tab.cursors[i].position )
-		end
-	end
-	
-	text_editor.write( tab.lines, tab.formatting, tab.cursors, "", true )
-end
-
 function plugin.api.text()
 	local tab = editor.tab()
 	local cursors = cursor.sort( tab.cursors )
@@ -237,7 +209,7 @@ function plugin.api.cursor_onscreen()
 	local cursor = tab.cursors[#tab.cursors]
 	local line = cursor.position[2]
 	local char = cursor.position[3]
-	local font = tab.style["editor:Font"]
+	local font = libstyle.get( tab.style, "editor:Font" )
 	local x = font:getWidth( tab.lines[line]:sub( 1, char - 1 ):gsub( "\t", "    " ) )
 	local y = (line - 1) * font:getHeight()
 

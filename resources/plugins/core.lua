@@ -2,7 +2,7 @@
 local plugin = require "src.plugin"
 local event = require "src.event"
 local editor = require "src.editor"
-
+--[[
 event.bind( "editor:key:left", function()
 	plugin.api.cursor_left( false, false, false )
 	plugin.api.cursor_onscreen()
@@ -122,8 +122,79 @@ event.bind( "editor:key:ctrl-a", function()
 
 	plugin.api.set_cursor( lines, text + 1, 1, 1 )
 end )
+]]
 
-event.bind( "editor:text", function(text)
-	plugin.api.write( text, false )
-	editor.resetCursorBlink()
+local function wrapf_cursor( f, ... )
+	local t = { ... }
+	return function( v )
+		f( v, unpack( t ) )
+	end
+end
+
+event.bind( "editor:key:ctrl-s", function( editor )
+	editor.map_cursors( editor.select_line )
+end )
+
+event.bind( "editor:key:left", function( editor )
+	editor.map_cursors( editor.cursor_left, nil, { select = false, by_word = false, create = false } )
+end )
+
+event.bind( "editor:key:right", function( editor )
+	editor.map_cursors( editor.cursor_right, nil, { select = false, by_word = false, create = false } )
+end )
+
+event.bind( "editor:key:alt-left", function( editor )
+	editor.map_cursors( editor.cursor_left, nil, { select = false, by_word = false, create = true } )
+end )
+
+event.bind( "editor:key:alt-right", function( editor )
+	editor.map_cursors( editor.cursor_right, nil, { select = false, by_word = false, create = true } )
+end )
+
+event.bind( "editor:key:ctrl-alt-left", function( editor )
+	editor.map_cursors( editor.cursor_left, nil, { select = false, by_word = true, create = true } )
+end )
+
+event.bind( "editor:key:ctrl-alt-right", function( editor )
+	editor.map_cursors( editor.cursor_right, nil, { select = false, by_word = true, create = true } )
+end )
+
+event.bind( "editor:key:shift-left", function( editor )
+	editor.map_cursors( editor.cursor_left, nil, { select = true, by_word = false, create = false } )
+end )
+
+event.bind( "editor:key:shift-right", function( editor )
+	editor.map_cursors( editor.cursor_right, nil, { select = true, by_word = false, create = false } )
+end )
+
+event.bind( "editor:key:ctrl-shift-left", function( editor )
+	editor.map_cursors( editor.cursor_left, nil, { select = true, by_word = true, create = false } )
+end )
+
+event.bind( "editor:key:ctrl-shift-right", function( editor )
+	editor.map_cursors( editor.cursor_right, nil, { select = true, by_word = true, create = false } )
+end )
+
+event.bind( "editor:key:ctrl-left", function( editor )
+	editor.map_cursors( editor.cursor_left, nil, { select = false, by_word = true, create = false } )
+end )
+
+event.bind( "editor:key:ctrl-right", function( editor )
+	editor.map_cursors( editor.cursor_right, nil, { select = false, by_word = true, create = false } )
+end )
+
+event.bind( "editor:key:backspace", function( editor )
+	editor.map_cursors( editor.backspace )
+end )
+
+event.bind( "editor:key:tab", function( editor, text )
+	editor.map_cursors( editor.write, nil, "\t" )
+end )
+
+event.bind( "editor:key:return", function( editor, text )
+	editor.map_cursors( editor.write, nil, "\n" )
+end )
+
+event.bind( "editor:text", function( editor, text )
+	editor.map_cursors( editor.write, nil, text )
 end )
