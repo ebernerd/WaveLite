@@ -34,14 +34,18 @@ local template = {
 
 		["syntax:Operator.Unary.Len"] = nil;
 
-	["syntax:Constant"] = rgb( 0x3092c6 );
-		["syntax:Constant.String"] = rgb( 0x3092c6 );
-		["syntax:Constant.Number"] = rgb( 0x3092c6 );
+	["syntax:Constant"] = rgb( 0x1070a0 );
+		["syntax:Constant.String"] = rgb( 0x1070a0 );
+		["syntax:Constant.Number"] = rgb( 0x1070a0 );
 			["syntax:Constant.Number.Integer"] = nil;
 		["syntax:Constant.Boolean"] = rgb( 0xed912c );
 		["syntax:Constant.Character"] = nil;
 		["syntax:Constant.Null"] = nil;
 		["syntax:Constant.Identifier"] = rgb( 0x404040 );
+
+	["syntax:Library"] = rgb( 0x3092c6 );
+		["syntax:Library.Native"] = rgb( 0x3092c6 );
+		["syntax:Library.User"] = rgb( 0x3092c6 );
 
 	["syntax:Comment"] = rgb( 0x919d9f );
 	["syntax:Typename"] = rgb( 0x80a0e0 );
@@ -56,9 +60,12 @@ local template = {
 		["editor:Code.Background"] = rgb( 0xfafafa );
 			["editor:Code.Background.Selected"] = { 80, 160, 255, 40 };
 		["editor:Code.Foreground"] = rgb( 0x404040 );
-		["editor:Code.TabWidth"] = "@editor:TabWidth";
-		["editor:Code.TabForeground"] = nil;
 		["editor:Code.Padding"] = 10;
+
+	["editor:Tabs"] = nil;
+		["editor:Tabs.Width"] = "@editor:TabWidth";
+		["editor:Tabs.Foreground"] = rgb( 0xd0d0d0 );
+		["editor:Tabs.Shown"] = true;
 
 	["editor:Lines"] = nil;
 		["editor:Lines.Background"] = rgb( 0xf5f5f5 );
@@ -73,8 +80,6 @@ local template = {
 	["editor:Cursor"] = nil;
 		["editor:Cursor.Foreground"] = rgb( 0x303030 );
 		["editor:Cursor.FullCharWidth"] = false;
-
-	["editor:TabWidth"] = "@editor:TabWidth";
 
 	["editor:Font"] = love.graphics.newFont( "resources/fonts/Inconsolata/Inconsolata.otf", 18 );
 

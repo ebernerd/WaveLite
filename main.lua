@@ -1,4 +1,7 @@
 
+require "resources.plugins.core"
+require "resources.plugins.custom"
+
 local editor = require "src.editor"
 local UIPanel = require "src.UIPanel"
 
@@ -8,7 +11,6 @@ editor.panel.x = 100
 editor.panel.y = 100
 editor.panel:resize( 600, 400 )
 editor.panel:focus()
-editor.formatting.formatter = require "resources.languages.lua"
 
 UIPanel.main:add( editor.panel )
 
@@ -19,10 +21,6 @@ editor2.panel.x = 750
 editor2.panel.y = 50
 editor2.panel:resize( 200, 300 )
 editor2.style = require "resources.styles.dark"
-editor2.style["editor:Outline.Shown"] = false
-editor2.style["editor:Lines.Padding"] = 30
-editor2.style["editor:Code.Padding"] = 0
-editor2.formatting.formatter = require "resources.languages.lua"
 
 UIPanel.main:add( editor2.panel )
 
@@ -32,14 +30,8 @@ local editor3 = require "src.CodeEditor" ()
 editor3.panel.x = 300
 editor3.panel.y = 200
 editor3.panel:resize( 300, 250 )
-editor3.formatting.formatter = require "resources.languages.lua"
 
 UIPanel.main:add( editor3.panel )
-
-	local plugin = require "src.plugin"
-
-	require "resources.plugins.core"
-	require "resources.plugins.custom"
 
 function love.load()
 	love.keyboard.setKeyRepeat( true )

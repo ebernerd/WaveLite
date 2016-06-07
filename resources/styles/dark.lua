@@ -22,6 +22,9 @@ return style.new {
 	["editor:Scrollbar.Slider"] = rgb( 0x666666 );
 	["editor:Cursor.Foreground"] = rgb( 0xb0b0b0 );
 
+	["editor:Outline.Foreground"] = rgb( 0xd0d0d0 );
+	["editor:Tabs.Foreground"] = rgb( 0x505050 );
+
 	["editor:Lines.Background"] = rgb( 0x505050 );
 	["editor:Lines.Foreground"] = rgb( 0xb0b0b0 );
 }

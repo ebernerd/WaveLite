@@ -34,6 +34,9 @@ return formatting.newFormatter {
 		["nil"] = "syntax:Constant.Null";
 
 		["self"] = "syntax:Constant.Reference";
+
+		["require"] = "syntax:Library.Native";
+		["print"] = "syntax:Library.Native";
 	};
 
 	symbols = {

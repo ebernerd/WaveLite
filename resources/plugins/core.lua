@@ -2,6 +2,15 @@
 local plugin = require "src.plugin"
 local event = require "src.event"
 local editor = require "src.editor"
+local res = require "src.resource"
+
+res.register( "style", "light", "resources.styles.light" )
+res.register( "style", "dark", "resources.styles.dark" )
+
+res.register( "language", "plain text", "resources.languages.plain text" )
+res.register( "language", "lua", "resources.languages.lua" )
+res.register( "language", "flux", "resources.languages.flux" )
+
 --[[
 event.bind( "editor:key:left", function()
 	plugin.api.cursor_left( false, false, false )

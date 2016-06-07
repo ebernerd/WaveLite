@@ -23,17 +23,4 @@ function text_window.pixelsToLocation( lines, x, y, font, tabWidth )
 	return #lines[line] + 1, line
 end
 
-function text_window.locationToPixels( lines, x, y, font, tabWidth )
-	local fWidth = 0
-	local fHeight = font:getHeight()
-
-	for i = 1, x - 1 do
-		local char = lines[y]:sub( i, i )
-		local charWidth = char == "\t" and tabWidth or font:getWidth( char == "" and " " or char )
-		fWidth = fWidth + charWidth
-	end
-
-	return fWidth, (y - 1) * fHeight
-end
-
 return text_window

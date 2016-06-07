@@ -32,6 +32,24 @@ function util.splitlines( text )
 	return lines
 end
 
+function util.roundup( n, b )
+	return math.ceil( n / b ) * b
+end
+
+function util.splittabs( text )
+	local parts = {}
+	local tabs = false
+	local s, f, c = text:find "^([^\t]+)"
+
+	while s do
+		parts[#parts + 1] = c
+		tabs = not tabs
+		s, f, c = text:find( tabs and "^(\t+)" or "^([^\t]*)", f + 1 )
+	end
+
+	return parts
+end
+
 function util.lookup_style( style, index )
 	local parts = {}
 	for part in index:gmatch "[^%.]+" do

@@ -6,11 +6,11 @@ function event.bind( event, callback )
 	local conditions = {}
 
 	if event:find "#" then
-		for part in event:match ".+#(.*)$":gmatch "[^;]" do
-			conditions[part:match "(.+)%s*=" or part] = part:match ".+%s*=%s*(.*)$" or true
+		for part in (event:match ".-#(.+)$" or ""):gmatch "[^;#]+" do
+			conditions[part:match "^%s*(%S+)%s*=" or part] = part:match "^%s*%S+%s*=%s*(.*)%s*$" or true
 		end
 
-		event = event:match ".+#"
+		event = event:match "^(.-)%s*#"
 	end
 
 	events[event] = events[event] or {}
@@ -28,6 +28,8 @@ function event.unbind( event, callback )
 end
 
 function event.invoke( event, param, ... )
+	local etocall = {}
+
 	if events[event] then
 		for i = 1, #events[event] do
 			local cancall = true
@@ -42,13 +44,17 @@ function event.invoke( event, param, ... )
 			end
 
 			if cancall then
-				local ok, err = pcall( events[event][i].callback, param, ... )
-
-				if not ok then
-					error( err, 0 )
-					-- do something?
-				end
+				etocall[#etocall + 1] = events[event][i].callback
 			end
+		end
+	end
+
+	for i = 1, #etocall do
+		local ok, err = pcall( etocall[i], param, ... )
+
+		if not ok then
+			error( err, 0 )
+			-- do something?
 		end
 	end
 end

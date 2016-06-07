@@ -9,6 +9,7 @@ local libtext_window = require "src.text_window"
 local libevent = require "src.event"
 local libscrollbar = require "src.scrollbar"
 local libstyle = require "src.style"
+local libresource = require "src.resource"
 
 local function shouldCursorBlink()
 	return os.clock() % 1 < 0.5
@@ -20,7 +21,7 @@ local function newCodeEditor()
 
 	local editor = {}
 
-	editor.style = libstyle.new()
+	editor.style = libresource.load( "style", "light" )
 	editor.panel = UIPanel.new()
 	editor.lines = { "" }
 	editor.language = "plain text"
@@ -42,12 +43,34 @@ local function newCodeEditor()
 		libcursor.new();
 	}
 	editor.cursorblink = 0
+	editor.langname = "plain text"
+	editor.stylename = "light"
 
 	editor.panel.enable_keyboard = true
 
 	editor.api = {}
 
 	local isMapping = false
+
+	function editor.api.setLanguage( name )
+		editor.langname = name
+		editor.formatting.formatter = libresource.load( "language", name )
+		libformatting.format( editor.lines, editor.formatting )
+	end
+
+	function editor.api.language()
+		return editor.langname
+	end
+
+	function editor.api.setStyle( name )
+		editor.stylename = name
+		editor.style = libresource.load( "style", name )
+		libformatting.format( editor.lines, editor.formatting )
+	end
+
+	function editor.api.style()
+		return editor.stylename
+	end
 
 	function editor.api.write( cursor, text )
 		libtext_editor.write( editor.lines, editor.formatting, editor.cursors, cursor, text )
@@ -155,127 +178,9 @@ local function newCodeEditor()
 	end
 
 	function editor.panel:onDraw( stage )
-		local font = libstyle.get( editor.style, "editor:Font" )
-		local fontHeight = font:getHeight()
-		local showLines = libstyle.get( editor.style, "editor:Lines.Shown" )
-		local showOutline = libstyle.get( editor.style, "editor:Outline.Shown" )
-		local linesWidth = font:getWidth( #editor.lines )
-		local linesPadding = libstyle.get( editor.style, "editor:Lines.Padding" )
-		local linesWidthPadding = linesWidth + 2 * linesPadding
-		local codePadding = libstyle.get( editor.style, "editor:Code.Padding" )
-		local minLine = math.min( math.floor( editor.scrollX / fontHeight ) + 1, #editor.lines )
-		local maxLine = math.min( math.ceil( (editor.scrollX + editor.viewHeight) / fontHeight ) + 1, #editor.lines )
-		local cursors_sorted = libcursor.sort( editor.cursors )
-		local n = 1
-		local i = 1
-
-		love.graphics.setFont( font )
-		love.graphics.setColor( libstyle.get( editor.style, "editor:Code.Background" ) )
-		love.graphics.rectangle( "fill", 0, 0, self.width, self.height )
-
-		love.graphics.push()
-		love.graphics.translate( linesWidthPadding + codePadding - editor.scrollX, -editor.scrollY )
-
-		for line = minLine, maxLine do
-
-			local blocks = libformatting.parse( editor.formatting.lines[line] )
-			local x = 0
-
-			for i = 1, #blocks do
-				love.graphics.setColor( libstyle.get( editor.style, blocks[i].style ) )
-				love.graphics.print( blocks[i].text, x, (line - 1) * fontHeight )
-
-				x = x + font:getWidth( blocks[i].text )
-			end
-
+		if stage == "before" then
+			librendering.code( editor, self )
 		end
-
-
-		love.graphics.setColor( libstyle.get( editor.style, "editor:Code.Background.Selected" ) )
-		while i <= maxLine do
-			if cursors_sorted[n] then
-				if cursors_sorted[n].selection then
-					local min, max = libcursor.order( cursors_sorted[n] )
-
-					if min[2] <= i and max[2] >= i then
-						local start = min[2] < i and 0 or font:getWidth( editor.lines[i]:sub( 1, min[3] - 1 ) )
-						local finish = max[2] > i and self.width or font:getWidth( editor.lines[i]:sub( 1, max[3] - 1 ) )
-
-						love.graphics.rectangle( "fill", start, (i - 1) * fontHeight, finish - start, fontHeight )
-
-						if max[2] == i then
-							n = n + 1
-						else
-							i = i + 1
-						end
-					elseif max[2] < i then
-						n = n + 1
-					else
-						i = i + 1
-					end
-				else
-					n = n + 1
-				end
-			else
-				break
-			end
-		end
-
-		-- draw selection (editor:Code.Background.Selected)
-
-		love.graphics.pop()
-		
-		if showLines then
-			love.graphics.setColor( libstyle.get( editor.style, "editor:Lines.Background" ) )
-			love.graphics.rectangle( "fill", 0, 0, linesWidthPadding, editor.viewHeight )
-
-			love.graphics.push()
-			love.graphics.translate( 0, -editor.scrollY )
-			love.graphics.setColor( libstyle.get( editor.style, "editor:Lines.Foreground" ) )
-
-			for line = minLine, maxLine do
-				love.graphics.print( line, linesWidth + linesPadding - font:getWidth( line ), (line - 1) * fontHeight )
-			end
-
-			love.graphics.pop()
-		end
-
-		-- draw scrollbars
-
-		local cx, cy, fx, fy
-		local fullCharWidth = libstyle.get( editor.style, "editor:Cursor.FullCharWidth" )
-
-		love.graphics.setColor( libstyle.get( editor.style, "editor:Cursor.Foreground" ) )
-
-		for i = 1, #editor.cursors do
-			if self.focussed and editor.cursorblink % 1 < 0.5 and not editor.cursors[i].selection then
-				cx, cy = editor.cursors[i].position[3], editor.cursors[i].position[2]
-				fx = linesWidthPadding + codePadding - editor.scrollX + font:getWidth( editor.lines[cy]:sub( 1, cx - 1 ) )
-				fy = (cy - 1) * fontHeight
-				love.graphics.rectangle( "fill", fx, fy, fullCharWidth and font:getWidth( editor.lines[cy]:sub( cx, cx ) ) or 1, fontHeight )
-			end
-		end
-
-		if showOutline then
-			love.graphics.setColor( libstyle.get( editor.style, "editor:Outline.Foreground" ) )
-			love.graphics.rectangle( "line", 0, 0, self.width, self.height )
-		end
-
-		love.graphics.print( #editor.cursors )
-
-		--[[["editor:Code.TabWidth"] = "@editor:TabWidth";
-		["editor:Code.TabForeground"] = nil;
-
-		["editor:Lines.Background"] = rgb( 0xf5f5f5 );
-		["editor:Lines.Foreground"] = rgb( 0xb0b0b0 );
-
-		["editor:Scrollbar.Tray"] = rgb( 0xdddddd );
-		["editor:Scrollbar.Slider"] = rgb( 0xbbbbbb );
-
-	["editor:TabWidth"] = "@editor:TabWidth";
-
-	["editor:Font"] = love.graphics.newFont( "resources/fonts/Inconsolata/Inconsolata.otf", 18 );]]
-
 	end
 
 	function editor.panel:onUpdate( dt )
@@ -299,6 +204,7 @@ local function newCodeEditor()
 
 	function editor.panel:onTouch( x, y, button )
 		self:focus()
+		self.cursorblink = 0
 		libevent.invoke( "editor:" ..
 			(util.isCtrlHeld() and "ctrl-" or "") ..
 			(util.isAltHeld() and "alt-" or "") .. 
