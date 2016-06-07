@@ -91,8 +91,8 @@ function rendering.code( editor, self )
 				local min, max = libcursor.order( cursors_sorted[n] )
 
 				if min[2] <= i and max[2] >= i then
-					local start = min[2] < i and 0 or font:getWidth( editor.lines[i]:sub( 1, min[3] - 1 ) )
-					local finish = max[2] > i and self.width or font:getWidth( editor.lines[i]:sub( 1, max[3] - 1 ) )
+					local start = min[2] < i and 0 or lineWidthUpTo( editor.lines[i], min[3], font, tabWidthPixels )
+					local finish = max[2] > i and self.width or lineWidthUpTo( editor.lines[i], max[3], font, tabWidthPixels )
 
 					love.graphics.rectangle( "fill", start, (i - 1) * fontHeight, finish - start, fontHeight )
 
