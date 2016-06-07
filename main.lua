@@ -1,6 +1,9 @@
 
 require "resources.plugins.core"
 require "resources.plugins.custom"
+require "src.ser" --table serialization
+options = require "src.options"
+packages = require "src.packages"
 
 local editor = require "src.editor"
 local UIPanel = require "src.UIPanel"
