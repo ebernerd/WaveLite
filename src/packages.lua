@@ -1,4 +1,5 @@
 themes = { }
+packages = { }
 
 local defaulttheme = {
 
@@ -36,7 +37,7 @@ if not love.filesystem.isFile( "/user/packages/default.lua" ) then
 	t.Themes._Default = defaultTheme
 
 	love.filesystem.newFile( "/user/packages/default.lua" )
-	love.filesystem.write( "/user/packages/default.lua", t)
+	love.filesystem.write( "/user/packages/default.lua", table.serialize(t) )
 end
 
 function packages.load()
