@@ -1,122 +1,133 @@
 
-return {
+local formatting = require "src.formatting"
+
+return formatting.newFormatter {
 	keywords = {
-		["if"] = "Keyword";
-		["else"] = "Keyword";
-		["while"] = "Keyword";
-		["for"] = "Keyword";
-		["foreach"] = "Keyword";
-		["in"] = "Keyword";
-		["repeat"] = "Keyword";
-		["until"] = "Keyword";
-		["switch"] = "Keyword";
-		["case"] = "Keyword";
-		["default"] = "Keyword";
-		["try"] = "Keyword";
-		["catch"] = "Keyword";
-		["class"] = "Keyword";
-		["extends"] = "Keyword";
-		["implements"] = "Keyword";
-		["interface"] = "Keyword";
-		["enum"] = "Keyword";
-		["namespace"] = "Keyword";
-		["using"] = "Keyword";
-		["import"] = "Keyword";
-		["return"] = "Keyword";
-		["break"] = "Keyword";
-		["continue"] = "Keyword";
-		["auto"] = "Keyword";
-		["void"] = "Keyword";
-		["public"] = "Keyword";
-		["private"] = "Keyword";
-		["static"] = "Keyword";
-		["let"] = "Keyword";
-		["const"] = "Keyword";
-		["throw"] = "Keyword";
-		["super"] = "Keyword";
-		["operator"] = "Keyword";
-		["function"] = "Keyword";
-		["new"] = "Keyword";
-		["typeof"] = "Keyword";
-		["final"] = "Keyword";
-		["abstract"] = "Keyword";
-		["and"] = "Keyword";
-		["or"] = "Keyword";
-		["safe"] = "Keyword";
-		["true"] = "Constant.Boolean";
-		["false"] = "Constant.Boolean";
-		["null"] = "Constant.Null";
+		["if"] = "syntax:Keyword";
+		["else"] = "syntax:Keyword";
+		["while"] = "syntax:Keyword";
+		["for"] = "syntax:Keyword";
+		["foreach"] = "syntax:Keyword";
+		["in"] = "syntax:Keyword";
+		["repeat"] = "syntax:Keyword";
+		["until"] = "syntax:Keyword";
+		["switch"] = "syntax:Keyword";
+		["case"] = "syntax:Keyword";
+		["default"] = "syntax:Keyword";
+		["try"] = "syntax:Keyword";
+		["catch"] = "syntax:Keyword";
+		["class"] = "syntax:Keyword";
+		["extends"] = "syntax:Keyword";
+		["implements"] = "syntax:Keyword";
+		["interface"] = "syntax:Keyword";
+		["enum"] = "syntax:Keyword";
+		["namespace"] = "syntax:Keyword";
+		["using"] = "syntax:Keyword";
+		["import"] = "syntax:Keyword";
+		["return"] = "syntax:Keyword";
+		["break"] = "syntax:Keyword";
+		["continue"] = "syntax:Keyword";
+		["auto"] = "syntax:Keyword";
+		["void"] = "syntax:Keyword";
+		["public"] = "syntax:Keyword";
+		["private"] = "syntax:Keyword";
+		["static"] = "syntax:Keyword";
+		["let"] = "syntax:Keyword";
+		["const"] = "syntax:Keyword";
+		["throw"] = "syntax:Keyword";
+		["super"] = "syntax:Keyword";
+		["operator"] = "syntax:Keyword";
+		["function"] = "syntax:Keyword";
+		["new"] = "syntax:Keyword";
+		["typeof"] = "syntax:Keyword";
+		["final"] = "syntax:Keyword";
+		["abstract"] = "syntax:Keyword";
+		["and"] = "syntax:Keyword";
+		["or"] = "syntax:Keyword";
+		["safe"] = "syntax:Keyword";
+		["typename"] = "syntax:Keyword";
+		
+		["true"] = "syntax:Constant.Boolean";
+		["false"] = "syntax:Constant.Boolean";
+		["null"] = "syntax:Constant.Null";
+
+		["int"] = "syntax:Typename.Native";
+		["float"] = "syntax:Typename.Native";
+		["string"] = "syntax:Typename.Native";
+		["byte"] = "syntax:Typename.Native";
+		["char"] = "syntax:Typename.Native";
+		["bool"] = "syntax:Typename.Native";
 	};
 
 	symbols = {
-		["="] = "Symbol";
+		["="] = "syntax:Symbol";
 
-		["["] = "Symbol.Bracket.Square";
-		["]"] = "Symbol.Bracket.Square";
-		["("] = "Symbol.Bracket.Round";
-		[")"] = "Symbol.Bracket.Round";
-		["{"] = "Symbol.Bracket.Curly";
-		["}"] = "Symbol.Bracket.Curly";
+		["["] = "syntax:Symbol.Bracket.Square";
+		["]"] = "syntax:Symbol.Bracket.Square";
+		["("] = "syntax:Symbol.Bracket.Round";
+		[")"] = "syntax:Symbol.Bracket.Round";
+		["{"] = "syntax:Symbol.Bracket.Curly";
+		["}"] = "syntax:Symbol.Bracket.Curly";
 
-		["+"] = "Operator.Math.Add";
-		["-"] = "Operator.Math.Sub";
-		["*"] = "Operator.Math.Mul";
-		["/"] = "Operator.Math.Div";
-		["%"] = "Operator.Math.Mod";
-		["**"] = "Operator.Math.Pow";
+		["+"] = "syntax:Operator.Math.Add";
+		["-"] = "syntax:Operator.Math.Sub";
+		["*"] = "syntax:Operator.Math.Mul";
+		["/"] = "syntax:Operator.Math.Div";
+		["%"] = "syntax:Operator.Math.Mod";
+		["**"] = "syntax:Operator.Math.Pow";
 
-		["+="] = "Operator.Math.Add";
-		["-="] = "Operator.Math.Sub";
-		["*="] = "Operator.Math.Mul";
-		["/="] = "Operator.Math.Div";
-		["%="] = "Operator.Math.Mod";
-		["**="] = "Operator.Math.Pow";
+		["+="] = "syntax:Operator.Math.Add";
+		["-="] = "syntax:Operator.Math.Sub";
+		["*="] = "syntax:Operator.Math.Mul";
+		["/="] = "syntax:Operator.Math.Div";
+		["%="] = "syntax:Operator.Math.Mod";
+		["**="] = "syntax:Operator.Math.Pow";
 
-		["++"] = "Operator.Math.Add";
-		["--"] = "Operator.Math.Sub";
+		["++"] = "syntax:Operator.Math.Add";
+		["--"] = "syntax:Operator.Math.Sub";
 
-		["=="] = "Operator.Compare.Eq";
-		["!="] = "Operator.Compare.Neq";
-		[">="] = "Operator.Compare.Gte";
-		["<="] = "Operator.Compare.Lte";
-		[">"] = "Operator.Compare.Gt";
-		["<"] = "Operator.Compare.Lt";
+		["=="] = "syntax:Operator.Compare.Eq";
+		["!="] = "syntax:Operator.Compare.Neq";
+		[">="] = "syntax:Operator.Compare.Gte";
+		["<="] = "syntax:Operator.Compare.Lte";
+		[">"] = "syntax:Operator.Compare.Gt";
+		["<"] = "syntax:Operator.Compare.Lt";
 
-		["&"] = "Operator.Bitwise.And";
-		["|"] = "Operator.Bitwise.Or";
-		["^"] = "Operator.Bitwise.Xor";
-		["<<"] = "Operator.Bitwise.Lshift";
-		[">>"] = "Operator.Bitwise.Rshift";
+		["&"] = "syntax:Operator.Bitwise.And";
+		["|"] = "syntax:Operator.Bitwise.Or";
+		["^"] = "syntax:Operator.Bitwise.Xor";
+		["<<"] = "syntax:Operator.Bitwise.Lshift";
+		[">>"] = "syntax:Operator.Bitwise.Rshift";
 
-		["&="] = "Operator.Bitwise.And";
-		["|="] = "Operator.Bitwise.Or";
-		["^="] = "Operator.Bitwise.Xor";
-		["<<="] = "Operator.Bitwise.Lshift";
-		[">>="] = "Operator.Bitwise.Rshift";
+		["&="] = "syntax:Operator.Bitwise.And";
+		["|="] = "syntax:Operator.Bitwise.Or";
+		["^="] = "syntax:Operator.Bitwise.Xor";
+		["<<="] = "syntax:Operator.Bitwise.Lshift";
+		[">>="] = "syntax:Operator.Bitwise.Rshift";
 
-		["&&"] = "Operator.And";
-		["||"] = "Operator.Or";
+		["&&"] = "syntax:Operator.And";
+		["||"] = "syntax:Operator.Or";
 
-		["&&="] = "Operator.And";
-		["||="] = "Operator.Or";
+		["&&="] = "syntax:Operator.And";
+		["||="] = "syntax:Operator.Or";
 
-		["!"] = "Operator.Not";
-		["#"] = "Operator.Len";
-		["~"] = "Operator.Bitwise.Not";
+		["!"] = "syntax:Operator.Not";
+		["#"] = "syntax:Operator.Len";
+		["~"] = "syntax:Operator.Bitwise.Not";
 
-		[".."] = "Operator.Range";
-		["->"] = "Operator.Cast";
+		[".."] = "syntax:Operator.Range";
+		["->"] = "syntax:Operator.Cast";
 
-		["@"] = "Symbol.Preprocessor";
+		["@"] = "syntax:Symbol.Preprocessor";
 
-		["..."] = "Symbol.Vararg";
+		["..."] = "syntax:Symbol.Vararg";
 
-		["::"] = "Symbol.Index";
-		["."] = "Symbol.Index";
-		[":"] = "Symbol.Index";
+		["::"] = "syntax:Symbol.Index";
+		["."] = "syntax:Symbol.Index";
+		[":"] = "syntax:Symbol.Index";
 
-		[","] = "Symbol.Sep";
-		[";"] = "Symbol.Sep";
+		[","] = "syntax:Symbol.Sep";
+		[";"] = "syntax:Symbol.Sep";
 	};
 
 	comments = {

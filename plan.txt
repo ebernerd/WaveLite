@@ -1,0 +1,67 @@
+
+Styles
+
+	editor:
+
+		Font
+
+		Outline
+			Foreground
+			Shown
+
+		Code
+			Background
+				Selected
+			Foreground
+			TabWidth
+			TabForeground
+			Padding
+
+		Lines
+			Background
+			Foreground
+			Shown
+			Padding
+
+
+Events
+
+	"editor:key:X" (editor, key)
+
+	"editor:touch" (editor, position)
+	"editor:ctrl-touch" (editor, position)
+	"editor:ctrl-alt-touch" (editor, position)
+	"editor:ctrl-shift-touch" (editor, position)
+	"editor:ctrl-alt-shift-touch" (editor, position)
+	"editor:alt-touch" (editor, position)
+	"editor:alt-shift-touch" (editor, position)
+	"editor:shift-touch" (editor, position)
+	"editor:move" (editor, position)
+	"editor:release" (editor, position)
+
+	"editor:create" (editor)
+	"editor:save" (editor)
+	"editor:close" (editor)
+
+
+API
+	WaveLite.*
+		event
+			void bind(string event, function callback)
+			void unbind(string event, function callback)
+			void invoke(string event, ...)
+		editor
+			editor open(string type, options {dependant on type})
+			editor close(editor)
+			editor register(string type, string name, data)
+
+
+	system
+		string platform()
+		void copy(string text)
+		string paste()
+
+
+Tab types:
+
+
