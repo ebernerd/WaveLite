@@ -12,102 +12,6 @@ res.register( "language", "lua", "resources.languages.lua" )
 res.register( "language", "flux", "resources.languages.flux" )
 
 --[[
-event.bind( "editor:key:left", function()
-	plugin.api.cursor_left( false, false, false )
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:right", function()
-	plugin.api.cursor_right( false, false, false )
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:shift-left", function()
-	plugin.api.cursor_left( true, false, false )
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:shift-right", function()
-	plugin.api.cursor_right( true, false, false )
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:alt-left", function()
-	plugin.api.cursor_left( false, true, false )
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:alt-right", function()
-	plugin.api.cursor_right( false, true, false )
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:ctrl-left", function()
-	plugin.api.cursor_left( false, false, true )
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:ctrl-right", function()
-	plugin.api.cursor_right( false, false, true )
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:ctrl-shift-left", function()
-	plugin.api.cursor_left( true, false, true )
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:ctrl-shift-right", function()
-	plugin.api.cursor_right( true, false, true )
-	plugin.api.cursor_onscreen()
-end )
-
-event.bind( "editor:key:up", function()
-	plugin.api.cursor_up( false, false, false )
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:down", function()
-	plugin.api.cursor_down( false, false, false )
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:alt-up", function()
-	plugin.api.cursor_up( false, true, false )
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:alt-down", function()
-	plugin.api.cursor_down( false, true, false )
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:shift-up", function()
-	plugin.api.cursor_up( true, false, false )
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:shift-down", function()
-	plugin.api.cursor_down( true, false, false )
-	plugin.api.cursor_onscreen()
-end )
-
-event.bind( "editor:key:return", function()
-	plugin.api.write( "\n", true )
-	editor.resetCursorBlink()
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:tab", function()
-	plugin.api.write( "\t", true )
-	editor.resetCursorBlink()
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:backspace", function()
-	plugin.api.backspace( "\n", true )
-	editor.resetCursorBlink()
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:delete", function()
-	plugin.api.delete( "\t", true )
-	editor.resetCursorBlink()
-	plugin.api.cursor_onscreen()
-end )
-
-event.bind( "editor:key:kp1", function()
-	plugin.api.cursor_end()
-	plugin.api.cursor_onscreen()
-end )
-event.bind( "editor:key:kp7", function()
-	plugin.api.cursor_home()
-	plugin.api.cursor_onscreen()
-end )
-
 event.bind( "editor:key:ctrl-v", function()
 	plugin.api.write( love.system.getClipboardText(), false )
 	plugin.api.cursor_onscreen()
@@ -124,13 +28,6 @@ event.bind( "editor:key:ctrl-x", function()
 	editor.resetCursorBlink()
 	plugin.api.cursor_onscreen()
 end )
-
-event.bind( "editor:key:ctrl-a", function()
-	local lines = plugin.api.count_lines()
-	local text = plugin.api.count_text( lines )
-
-	plugin.api.set_cursor( lines, text + 1, 1, 1 )
-end )
 ]]
 
 local function wrapf_cursor( f, ... )
@@ -140,19 +37,63 @@ local function wrapf_cursor( f, ... )
 	end
 end
 
-event.bind( "editor:key:ctrl-d", function( editor )
+event.bind( "editor:key:ctrl-c", function( editor )
+	local t = {}
+	editor.map_cursors( function( cursor )
+		local text = editor.copy( cursor )
+		t[#t + 1] = text
+	end )
+	love.system.setClipboardText( table.concat( t, "\n" ) )
+end )
+
+event.bind( "editor:key:ctrl-shift-c", function( editor )
+	local t = {}
+	editor.map_cursors( function( cursor )
+		local text = editor.copy( cursor, true )
+		t[#t + 1] = text
+	end )
+	love.system.setClipboardText( table.concat( t, "\n" ) )
+end )
+
+event.bind( "editor:key:ctrl-x", function( editor )
+	local t = {}
+	editor.map_cursors( function( cursor )
+		local text = editor.copy( cursor )
+		t[#t + 1] = text
+	end )
+		.map_cursors( editor.write, nil, "" )
+	love.system.setClipboardText( table.concat( t, "\n" ) )
+end )
+
+event.bind( "editor:key:ctrl-shift-x", function( editor )
+	local t = {}
+	editor.map_cursors( function( cursor )
+		local text = editor.copy( cursor, true )
+		t[#t + 1] = text
+	end )
+		.map_cursors( editor.write, nil, "" )
+	love.system.setClipboardText( table.concat( t, "\n" ) )
+end )
+
+event.bind( "editor:key:ctrl-v", function( editor )
+	editor.map_cursors( editor.write, nil, love.system.getClipboardText() )
+end )
+
+event.bind( "editor:key:ctrl-t", function( editor ) -- remove cursors from the end of a line
+	editor.map_cursors( editor.cursor_remove, editor.filters.eofline ).resetCursorBlink()
+end )
+
+event.bind( "editor:key:ctrl-d", function( editor ) -- deselect all cursors
 	editor.map_cursors( editor.deselect )
 end )
 
-event.bind( "editor:key:ctrl-l", function( editor )
+event.bind( "editor:key:ctrl-l", function( editor ) -- select the line of each cursor
 	editor.map_cursors( editor.select_line )
 end )
 
-event.bind( "editor:key:ctrl-a", function( editor )
-	local i = 0
-
+event.bind( "editor:key:ctrl-a", function( editor ) -- select all text
 	editor
-		.map_cursors( editor.remove_cursor, function() i = i + 1 return i ~= 1 end )
+		.map_cursors( editor.cursor_remove, editor.filters.count_start (editor.cursor_count() - 1) )
 		.map_cursors( editor.cursor_home, nil, { full = true } )
 		.map_cursors( editor.cursor_end, nil, { full = true, select = true } )
 end )
@@ -263,6 +204,10 @@ end )
 
 event.bind( "editor:key:ctrl-right", function( editor )
 	editor.map_cursors( editor.cursor_right, nil, { select = false, by_word = true, create = false } )
+end )
+
+event.bind( "editor:key:delete", function( editor )
+	editor.map_cursors( editor.delete )
 end )
 
 event.bind( "editor:key:backspace", function( editor )

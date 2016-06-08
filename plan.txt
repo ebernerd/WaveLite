@@ -51,7 +51,6 @@ API
 
 		editor cursor_up(cursor, options {bool select, bool create, ID | create})
 		editor cursor_down(cursor, options {bool select, bool create, ID | create})
-		editor show_cursor(cursor)
 
 	WaveLite.*
 		event

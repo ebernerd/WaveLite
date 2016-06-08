@@ -77,7 +77,8 @@ function formatting.newFormatter( lang )
 			local ending = util.findEndingMatch( line, state.string_match, lang[sindex].finish[index], lang[sindex].escape and lang[sindex].escape[index], 1 )
 
 			if ending then
-				state.in_section = false
+				state.in_section = nil
+				state.string_match = nil
 				i = ending + 1
 				res = (sindex == "strings" and "{syntax:Constant.String;" or "{syntax:Comment;") .. util.formatText( line:sub( 1, ending ) ) .. "}"
 			else
@@ -152,7 +153,7 @@ function formatting.newFormatter( lang )
 		return res
 
 	end, {
-		in_section = false;
+		in_section = nil;
 		string_match = "";
 	}
 end

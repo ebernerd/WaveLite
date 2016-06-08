@@ -53,7 +53,7 @@ function text_editor.write( lines, formatting, cursors, cursor, text )
 			cursor.position = { pos, line, char, char }
 			cursor.selection = false
 
-		elseif cursors[i].position[1] > cpos then -- if the cursor is after the editing one
+		elseif cursors[i].position[1] >= cpos then -- if the cursor is after the editing one
 			
 			cursors[i].position = { cursors[i].position[1] + textdiff, libcursor.toLineChar( lines, cursors[i].position[1] + textdiff ) }
 			cursors[i].selection = cursors[i].selection and { cursors[i].selection[1] + textdiff, libcursor.toLineChar( lines, cursors[i].selection[1] + textdiff ) } or false

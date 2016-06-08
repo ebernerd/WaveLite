@@ -11,10 +11,6 @@ local libscrollbar = require "src.scrollbar"
 local libstyle = require "src.style"
 local libresource = require "src.resource"
 
-local function shouldCursorBlink()
-	return os.clock() % 1 < 0.5
-end
-
 local function repositionEditor( editor, cursor )
 	local line = cursor[2]
 	local char = cursor[3]
@@ -81,6 +77,8 @@ local function newCodeEditor()
 	editor.panel.enable_keyboard = true
 
 	editor.api = {}
+	editor.api.filters = {}
+	editor.api.position = {}
 
 	local isMapping = false
 	local shouldMerge = true
@@ -93,10 +91,17 @@ local function newCodeEditor()
 		end
 	end
 
+	function editor.api.resetCursorBlink()
+		editor.cursorblink = 0
+		return editor.api
+	end
+
 	function editor.api.setLanguage( name )
 		editor.langname = name
 		editor.formatting.formatter = libresource.load( "language", name )
 		libformatting.format( editor.lines, editor.formatting )
+
+		return editor.api
 	end
 
 	function editor.api.language()
@@ -107,6 +112,8 @@ local function newCodeEditor()
 		editor.stylename = name
 		editor.style = libresource.load( "style", name )
 		libformatting.format( editor.lines, editor.formatting )
+
+		return editor.api
 	end
 
 	function editor.api.style()
@@ -133,6 +140,20 @@ local function newCodeEditor()
 		editor.api.write( cursor, "" )
 
 		return editor.api
+	end
+
+	function editor.api.copy( cursor, copyLine )
+		if cursor.selection then
+			local min, max = libcursor.order( cursor )
+
+			if min[2] == max[2] then
+				return editor.lines[min[2]]:sub( min[3], max[3] - 1 )
+			else
+				return editor.lines[min[2]]:sub( min[3] ) .. "\n" .. table.concat( editor.lines, "\n", min[2] + 1, max[2] - 1 ) .. (max[2] > min[1] + 1 and "\n" or "") .. editor.lines[max[2]]:sub( 1, max[3] - 1 )
+			end
+		elseif copyLine then
+			return editor.lines[cursor.position[2]]
+		end
 	end
 
 	function editor.api.cursor_count()
@@ -183,7 +204,7 @@ local function newCodeEditor()
 	function editor.api.cursor_remove( cursor )
 		for i = #editor.cursors, 1, -1 do
 			if editor.cursors[i] == cursor then
-				table.remove( editor.cursors[i] )
+				table.remove( editor.cursors, i )
 			end
 		end
 
@@ -222,13 +243,13 @@ local function newCodeEditor()
 	function editor.api.cursor_end( cursor, options )
 		if options.select then
 			cursor.selection = cursor.selection or cursor.position
-			cursor.position = { libcursor.toPosition( editor.lines, options.full and #editor.lines or cursor.position[2], math.huge ), options.full and #editor.lines or cursor.position[2], #editor.lines[cursor.position[2]] + 1, math.huge }
+			cursor.position = { libcursor.toPosition( editor.lines, options.full and #editor.lines or cursor.position[2], math.huge ), options.full and #editor.lines or cursor.position[2], #editor.lines[options.full and #editor.lines or cursor.position[2]] + 1, math.huge }
 			editor.cursorblink = 0
 		elseif cursor.selection then
 			cursor.position = libcursor.larger( cursor.position, cursor.selection )
 			cursor.selection = false
 		else
-			cursor.position = { libcursor.toPosition( editor.lines, options.full and #editor.lines or cursor.position[2], math.huge ), options.full and #editor.lines or cursor.position[2], #editor.lines[cursor.position[2]] + 1, math.huge }
+			cursor.position = { libcursor.toPosition( editor.lines, options.full and #editor.lines or cursor.position[2], math.huge ), options.full and #editor.lines or cursor.position[2], #editor.lines[options.full and #editor.lines or cursor.position[2]] + 1, math.huge }
 			cursor.selection = false
 			editor.cursorblink = 0
 		end
@@ -350,11 +371,37 @@ local function newCodeEditor()
 		return editor.api
 	end
 
-	function editor.api.show_cursor( cursor )
-		repositionEditor( editor, cursor.position )
+	function editor.api.show( position )
+		repositionEditor( editor, position )
 
 		return editor.api
 	end
+
+	function editor.api.filters.eofline( cursor )
+		return cursor.position[3] == #editor.lines[cursor.position[2]] + 1
+	end
+
+	function editor.api.filters.sofline( cursor )
+		return cursor.position[3] == 1
+	end
+
+	function editor.api.filters.count_start( i )
+			i = i or 1
+		return function()
+			i = i - 1
+			return i >= 0
+		end
+	end
+
+	function editor.api.filters.count_end( i )
+		i = #editor.cursors - (i or 1)
+		return function()
+			i = i - 1
+			return i < 0
+		end
+	end
+
+	editor.api.filters.count = editor.api.filters.count_start
 
 	function editor.panel:onDraw( stage )
 		if stage == "before" then
@@ -383,7 +430,7 @@ local function newCodeEditor()
 
 	function editor.panel:onTouch( x, y, button )
 		self:focus()
-		self.cursorblink = 0
+		editor.cursorblink = 0
 		libevent.invoke( "editor:" ..
 			(util.isCtrlHeld() and "ctrl-" or "") ..
 			(util.isAltHeld() and "alt-" or "") .. 

@@ -105,7 +105,7 @@ function rendering.code( editor, self )
 	love.graphics.setColor( col[1], col[2], col[3], fullCharWidth and 40 or 255 )
 
 	for i = 1, #editor.cursors do
-		if self.focussed and editor.cursorblink % 1 < 0.5 and not editor.cursors[i].selection then
+		if self.focussed and editor.cursorblink % 1 < 0.5 then
 			cx, cy = editor.cursors[i].position[3], editor.cursors[i].position[2]
 			fx = util.lineWidthUpTo( editor.lines[cy], cx, font, tabWidthPixels )
 			fy = (cy - 1) * fontHeight
