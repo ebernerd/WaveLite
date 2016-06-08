@@ -10,22 +10,6 @@ local libscrollbar = require "src.scrollbar"
 local libstyle = require "src.style"
 local libresource = require "src.resource"
 
-local function lineWidthUpTo( line, x, font, tabWidth )
-	local w = 0
-
-	for c = 1, x - 1 do
-		local char = line:sub( c, c )
-
-		if char == "\t" then
-			w = util.roundup( w + 1, tabWidth )
-		else
-			w = w + font:getWidth( char )
-		end
-	end
-
-	return w
-end
-
 local rendering = {}
 
 function rendering.code( editor, self )
@@ -41,8 +25,8 @@ function rendering.code( editor, self )
 	local linesPadding = libstyle.get( editor.style, "editor:Lines.Padding" )
 	local linesWidthPadding = linesWidth + 2 * linesPadding
 	local codePadding = libstyle.get( editor.style, "editor:Code.Padding" )
-	local minLine = math.min( math.floor( editor.scrollX / fontHeight ) + 1, #editor.lines )
-	local maxLine = math.min( math.ceil( (editor.scrollX + editor.viewHeight) / fontHeight ) + 1, #editor.lines )
+	local minLine = math.min( math.floor( editor.scrollY / fontHeight ) + 1, #editor.lines )
+	local maxLine = math.min( math.ceil( (editor.scrollY + editor.viewHeight) / fontHeight ) + 1, #editor.lines )
 	local cursors_sorted = libcursor.sort( editor.cursors )
 	local n = 1
 	local i = 1
@@ -91,8 +75,8 @@ function rendering.code( editor, self )
 				local min, max = libcursor.order( cursors_sorted[n] )
 
 				if min[2] <= i and max[2] >= i then
-					local start = min[2] < i and 0 or lineWidthUpTo( editor.lines[i], min[3], font, tabWidthPixels )
-					local finish = max[2] > i and self.width or lineWidthUpTo( editor.lines[i], max[3], font, tabWidthPixels )
+					local start = min[2] < i and 0 or util.lineWidthUpTo( editor.lines[i], min[3], font, tabWidthPixels )
+					local finish = max[2] > i and self.width or util.lineWidthUpTo( editor.lines[i], max[3], font, tabWidthPixels )
 
 					love.graphics.rectangle( "fill", start, (i - 1) * fontHeight, finish - start, fontHeight )
 
@@ -114,7 +98,21 @@ function rendering.code( editor, self )
 		end
 	end
 
-	-- draw selection (editor:Code.Background.Selected)
+	local cx, cy, fx, fy, fw
+	local fullCharWidth = libstyle.get( editor.style, "editor:Cursor.FullCharWidth" )
+	local col = libstyle.get( editor.style, "editor:Cursor.Foreground" )
+
+	love.graphics.setColor( col[1], col[2], col[3], fullCharWidth and 40 or 255 )
+
+	for i = 1, #editor.cursors do
+		if self.focussed and editor.cursorblink % 1 < 0.5 and not editor.cursors[i].selection then
+			cx, cy = editor.cursors[i].position[3], editor.cursors[i].position[2]
+			fx = util.lineWidthUpTo( editor.lines[cy], cx, font, tabWidthPixels )
+			fy = (cy - 1) * fontHeight
+			fw = fullCharWidth and (editor.lines[cy]:sub( cx, cx ) == "\t" and util.roundup( fx + 1, tabWidthPixels ) - fx or font:getWidth( cx > #editor.lines[cy] and " " or editor.lines[cy]:sub( cx, cx ) )) or 1
+			love.graphics.rectangle( "fill", fx, fy, fw, fontHeight )
+		end
+	end
 
 	love.graphics.pop()
 
@@ -135,38 +133,13 @@ function rendering.code( editor, self )
 
 	-- draw scrollbars
 
-	local cx, cy, fx, fy, fw
-	local fullCharWidth = libstyle.get( editor.style, "editor:Cursor.FullCharWidth" )
-	local col = libstyle.get( editor.style, "editor:Cursor.Foreground" )
-
-	love.graphics.setColor( col[1], col[2], col[3], fullCharWidth and 40 or 255 )
-
-	for i = 1, #editor.cursors do
-		if self.focussed and editor.cursorblink % 1 < 0.5 and not editor.cursors[i].selection then
-			cx, cy = editor.cursors[i].position[3], editor.cursors[i].position[2]
-			fx = lineWidthUpTo( editor.lines[cy], cx, font, tabWidthPixels )
-			fy = (cy - 1) * fontHeight
-			fw = fullCharWidth and (editor.lines[cy]:sub( cx, cx ) == "\t" and util.roundup( fx + 1, tabWidthPixels ) - fx or font:getWidth( cx > #editor.lines[cy] and " " or editor.lines[cy]:sub( cx, cx ) )) or 1
-			love.graphics.rectangle( "fill", linesWidthPadding + codePadding - editor.scrollX + fx, fy, fw, fontHeight )
-		end
-	end
-
 	if showOutline then
 		love.graphics.setColor( libstyle.get( editor.style, "editor:Outline.Foreground" ) )
 		love.graphics.rectangle( "line", 0, 0, self.width, self.height )
 	end
 
-	love.graphics.print( #editor.cursors )
-
-	--[[["editor:Code.TabForeground"] = nil;
-
-	["editor:Lines.Background"] = rgb( 0xf5f5f5 );
-	["editor:Lines.Foreground"] = rgb( 0xb0b0b0 );
-
-	["editor:Scrollbar.Tray"] = rgb( 0xdddddd );
-	["editor:Scrollbar.Slider"] = rgb( 0xbbbbbb );
-
-	["editor:Font"] = love.graphics.newFont( "resources/fonts/Inconsolata/Inconsolata.otf", 18 );]]
+	-- ["editor:Scrollbar.Tray"] = rgb( 0xdddddd );
+	-- ["editor:Scrollbar.Slider"] = rgb( 0xbbbbbb );
 
 end
 

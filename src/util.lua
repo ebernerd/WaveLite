@@ -36,18 +36,20 @@ function util.roundup( n, b )
 	return math.ceil( n / b ) * b
 end
 
-function util.splittabs( text )
-	local parts = {}
-	local tabs = false
-	local s, f, c = text:find "^([^\t]+)"
+function util.lineWidthUpTo( line, x, font, tabWidthPixels )
+	local w = 0
 
-	while s do
-		parts[#parts + 1] = c
-		tabs = not tabs
-		s, f, c = text:find( tabs and "^(\t+)" or "^([^\t]*)", f + 1 )
+	for c = 1, x - 1 do
+		local char = line:sub( c, c )
+
+		if char == "\t" then
+			w = util.roundup( w + 1, tabWidthPixels )
+		else
+			w = w + font:getWidth( char )
+		end
 	end
 
-	return parts
+	return w
 end
 
 function util.lookup_style( style, index )

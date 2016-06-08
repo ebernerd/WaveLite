@@ -140,6 +140,23 @@ local function wrapf_cursor( f, ... )
 	end
 end
 
+event.bind( "editor:key:ctrl-d", function( editor )
+	editor.map_cursors( editor.deselect )
+end )
+
+event.bind( "editor:key:ctrl-l", function( editor )
+	editor.map_cursors( editor.select_line )
+end )
+
+event.bind( "editor:key:ctrl-a", function( editor )
+	local i = 0
+
+	editor
+		.map_cursors( editor.remove_cursor, function() i = i + 1 return i ~= 1 end )
+		.map_cursors( editor.cursor_home, nil, { full = true } )
+		.map_cursors( editor.cursor_end, nil, { full = true, select = true } )
+end )
+
 event.bind( "editor:key:ctrl-s", function( editor )
 	editor.map_cursors( editor.select_line )
 end )
@@ -166,6 +183,14 @@ end )
 
 event.bind( "editor:key:ctrl-kp1", function( editor )
 	editor.map_cursors( editor.cursor_end, nil, { select = false, create = false, full = true } )
+end )
+
+event.bind( "editor:key:ctrl-shift-kp7", function( editor )
+	editor.map_cursors( editor.cursor_home, nil, { select = true, create = false, full = true } )
+end )
+
+event.bind( "editor:key:ctrl-shift-kp1", function( editor )
+	editor.map_cursors( editor.cursor_end, nil, { select = true, create = false, full = true } )
 end )
 
 event.bind( "editor:key:up", function( editor )

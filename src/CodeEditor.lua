@@ -15,6 +15,38 @@ local function shouldCursorBlink()
 	return os.clock() % 1 < 0.5
 end
 
+local function repositionEditor( editor, cursor )
+	local line = cursor[2]
+	local char = cursor[3]
+	local font = libstyle.get( editor.style, "editor:Font" )
+	local fHeight = font:getHeight()
+	local space = font:getWidth " "
+	local tabWidth = libstyle.get( editor.style, "editor:Tabs.Width" ) * space
+	local showLines = libstyle.get( editor.style, "editor:Lines.Shown" )
+	local codePadding = libstyle.get( editor.style, "editor:Code.Padding" )
+	local linesWidthPadding = font:getWidth( #editor.lines ) + 2 * libstyle.get( editor.style, "editor:Lines.Padding" )
+
+	local yTop = fHeight * math.max( 0, line - 2 )
+	local yBottom = fHeight * math.min( #editor.lines, line + 1 )
+	local xLeft = util.lineWidthUpTo( editor.lines[line], math.max( 1, char - 1 ), font, tabWidth )
+	local xRight = util.lineWidthUpTo( editor.lines[line], char, font, tabWidth ) + space + space
+
+	if yBottom - editor.scrollY > editor.viewHeight then
+		editor.scrollY = yBottom - editor.viewHeight
+	end
+	if yTop - editor.scrollY < 0 then
+		editor.scrollY = yTop
+	end
+
+	if xRight - editor.scrollX > editor.viewWidth - (showLines and linesWidthPadding or 0) - codePadding then
+		editor.scrollX = xRight - editor.viewWidth + (showLines and linesWidthPadding or 0) + codePadding
+	end
+
+	if xLeft - editor.scrollX < 0 then
+		editor.scrollX = xLeft
+	end
+end
+
 local SCROLLBARSIZE = 10
 
 local function newCodeEditor()
@@ -84,16 +116,23 @@ local function newCodeEditor()
 	function editor.api.write( cursor, text )
 		libtext_editor.write( editor.lines, editor.formatting, editor.cursors, cursor, text )
 		editor.cursorblink = 0
+		repositionEditor( editor, cursor.position )
+
+		return editor.api
 	end
 
 	function editor.api.backspace( cursor )
 		cursor.selection = cursor.selection or libcursor.left( editor.lines, cursor.position )
 		editor.api.write( cursor, "" )
+
+		return editor.api
 	end
 
 	function editor.api.delete( cursor )
 		cursor.selection = cursor.selection or libcursor.right( editor.lines, cursor.position )
 		editor.api.write( cursor, "" )
+
+		return editor.api
 	end
 
 	function editor.api.cursor_count()
@@ -101,7 +140,11 @@ local function newCodeEditor()
 	end
 
 	function editor.api.map_cursors( f, filter, ... )
-		local t = libcursor.sort( editor.cursors )
+		local t = {} -- libcursor.sort( editor.cursors )
+
+		for i = 1, #editor.cursors do
+			t[i] = editor.cursors[i]
+		end
 
 		isMapping = true
 
@@ -116,23 +159,44 @@ local function newCodeEditor()
 		end
 
 		isMapping = false
+
+		return editor.api
 	end
 
 	function editor.api.cursor_new( position, ID )
 		editor.cursors[#editor.cursors + 1] = libcursor.new()
 		editor.cursors[#editor.cursors].position = position
+		repositionEditor( editor, editor.cursors[#editor.cursors].position )
 		tryMerge()
+
+		return editor.api
 	end
 
 	function editor.api.cursor_set( position, ID )
 		editor.cursors[1] = libcursor.new( ID )
 		editor.cursors[1].position = position
+		repositionEditor( editor, editor.cursors[1].position )
+
+		return editor.api
+	end
+
+	function editor.api.cursor_remove( cursor )
+		for i = #editor.cursors, 1, -1 do
+			if editor.cursors[i] == cursor then
+				table.remove( editor.cursors[i] )
+			end
+		end
+
+		return editor.api
 	end
 
 	function editor.api.select_to( cursor, position )
 		cursor.selection = cursor.selection or cursor.position
 		cursor.position = position
+		repositionEditor( editor, cursor.position )
 		tryMerge()
+
+		return editor.api
 	end
 
 	function editor.api.cursor_home( cursor, options )
@@ -148,7 +212,11 @@ local function newCodeEditor()
 			cursor.selection = false
 			editor.cursorblink = 0
 		end
+
+		repositionEditor( editor, cursor.position )
 		tryMerge()
+
+		return editor.api
 	end
 
 	function editor.api.cursor_end( cursor, options )
@@ -164,7 +232,11 @@ local function newCodeEditor()
 			cursor.selection = false
 			editor.cursorblink = 0
 		end
+
+		repositionEditor( editor, cursor.position )
 		tryMerge()
+
+		return editor.api
 	end
 
 	function editor.api.cursor_up( cursor, options )
@@ -173,6 +245,7 @@ local function newCodeEditor()
 			local c = libcursor.new( options.ID )
 			c.position = libcursor.up( editor.lines, tabWidth, cursor.position )
 			editor.cursors[#editor.cursors + 1] = c
+			repositionEditor( editor, c.position )
 		elseif options.select then
 			cursor.selection = cursor.selection or cursor.position
 			cursor.position = libcursor.up( editor.lines, tabWidth, cursor.position )
@@ -182,8 +255,12 @@ local function newCodeEditor()
 		else
 			cursor.position = libcursor.up( editor.lines, tabWidth, cursor.position )
 		end
+
+		repositionEditor( editor, cursor.position )
 		tryMerge()
 		editor.cursorblink = 0
+
+		return editor.api
 	end
 
 	function editor.api.cursor_down( cursor, options )
@@ -192,6 +269,7 @@ local function newCodeEditor()
 			local c = libcursor.new( options.ID )
 			c.position = libcursor.down( editor.lines, tabWidth, cursor.position )
 			editor.cursors[#editor.cursors + 1] = c
+			repositionEditor( editor, c.position )
 		elseif options.select then
 			cursor.selection = cursor.selection or cursor.position
 			cursor.position = libcursor.down( editor.lines, tabWidth, cursor.position )
@@ -201,8 +279,12 @@ local function newCodeEditor()
 		else
 			cursor.position = libcursor.down( editor.lines, tabWidth, cursor.position )
 		end
+
+		repositionEditor( editor, cursor.position )
 		tryMerge()
 		editor.cursorblink = 0
+
+		return editor.api
 	end
 
 	function editor.api.cursor_left( cursor, options )
@@ -210,6 +292,7 @@ local function newCodeEditor()
 			local c = libcursor.new( options.ID )
 			c.position = libcursor[options.by_word and "leftword" or "left"]( editor.lines, cursor.position )
 			editor.cursors[#editor.cursors + 1] = c
+			repositionEditor( editor, c.position )
 		elseif options.select then
 			cursor.selection = cursor.selection or cursor.position
 			cursor.position = libcursor[options.by_word and "leftword" or "left"]( editor.lines, cursor.position )
@@ -219,8 +302,12 @@ local function newCodeEditor()
 		else
 			cursor.position = libcursor[options.by_word and "leftword" or "left"]( editor.lines, cursor.position )
 		end
+
+		repositionEditor( editor, cursor.position )
 		tryMerge()
 		editor.cursorblink = 0
+
+		return editor.api
 	end
 
 	function editor.api.cursor_right( cursor, options )
@@ -228,6 +315,7 @@ local function newCodeEditor()
 			local c = libcursor.new( options.ID )
 			c.position = libcursor[options.by_word and "rightword" or "right"]( editor.lines, cursor.position )
 			editor.cursors[#editor.cursors + 1] = c
+			repositionEditor( editor, c.position )
 		elseif options.select then
 			cursor.selection = cursor.selection or cursor.position
 			cursor.position = libcursor[options.by_word and "rightword" or "right"]( editor.lines, cursor.position )
@@ -237,8 +325,12 @@ local function newCodeEditor()
 		else
 			cursor.position = libcursor[options.by_word and "rightword" or "right"]( editor.lines, cursor.position )
 		end
+
+		repositionEditor( editor, cursor.position )
 		tryMerge()
 		editor.cursorblink = 0
+
+		return editor.api
 	end
 
 	function editor.api.deselect( cursor )
@@ -250,6 +342,18 @@ local function newCodeEditor()
 
 		cursor.selection = { libcursor.toPosition( editor.lines, min[2], 1 ), min[2], 1, 1 }
 		cursor.position = { libcursor.toPosition( editor.lines, max[2], #editor.lines[max[2]] + 1 ), max[2], #editor.lines[max[2]] + 1, #editor.lines[max[2]] + 1 }
+
+		-- repositionEditor( editor, cursor.position ) ?
+
+		tryMerge()
+
+		return editor.api
+	end
+
+	function editor.api.show_cursor( cursor )
+		repositionEditor( editor, cursor.position )
+
+		return editor.api
 	end
 
 	function editor.panel:onDraw( stage )

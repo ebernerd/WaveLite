@@ -163,7 +163,7 @@ function cursor.down( lines, tabWidth, c )
 	if c[2] < #lines then
 		return upOrDown( lines, tabWidth, c, c[2] + 1 )
 	else
-		return { cursor.toPosition( lines, c[2], #lines[c[2]] + 1 ), c[2], #lines[c[2]] + 1, charcc }
+		return { cursor.toPosition( lines, c[2], #lines[c[2]] + 1 ), c[2], #lines[c[2]] + 1, c[4] }
 	end
 end
 
