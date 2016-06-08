@@ -34,7 +34,7 @@ function rendering.code( editor, self )
 	local tabWidth = libstyle.get( editor.style, "editor:Tabs.Width" )
 	local tabShown = libstyle.get( editor.style, "editor:Tabs.Shown" )
 	local tabColour = libstyle.get( editor.style, "editor:Tabs.Foreground" )
-	local tabWidthPixels = font:getWidth " " * tabWidth
+	local tabWidthPixels = font:getWidth " " * (tabWidth or 4)
 	local showLines = libstyle.get( editor.style, "editor:Lines.Shown" )
 	local showOutline = libstyle.get( editor.style, "editor:Outline.Shown" )
 	local linesWidth = font:getWidth( #editor.lines )
@@ -117,7 +117,7 @@ function rendering.code( editor, self )
 	-- draw selection (editor:Code.Background.Selected)
 
 	love.graphics.pop()
-	
+
 	if showLines then
 		love.graphics.setColor( libstyle.get( editor.style, "editor:Lines.Background" ) )
 		love.graphics.rectangle( "fill", 0, 0, linesWidthPadding, editor.viewHeight )

@@ -1,10 +1,16 @@
 
 require "resources.plugins.core"
 require "resources.plugins.custom"
+<<<<<<< HEAD
 
 -- require "src.ser" --table serialization
 -- options = require "src.options"
 -- packages = require "src.packages"
+=======
+require "src/ser" --table serialization
+options = require "src/options"
+packages = require "src/packages"
+>>>>>>> origin/rewrite
 
 local editor = require "src.editor"
 local UIPanel = require "src.UIPanel"
