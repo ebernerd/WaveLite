@@ -2,7 +2,43 @@
 local ID = 0
 local function newID() ID = ID + 1 return ID end
 
+ --  { position in text, line (+-) 1, clamped character, raw character }
+ --> { position in text, line (+-) 1, clamped character, absolute character coordinate }
+ --> { position in text, line (+-) 1, clamped character, raw character relative to new line }
+ --> { position in text, line (+-) 1, clamped #4, raw character relative to new line }
+ --> { recalculated position, line (+-) 1, clamped #4, raw character relative to new line }
+
 local cursor = {}
+
+local function upOrDown( lines, tabWidth, c, newline )
+	local rawchar = c[4]
+	local current_line = lines[c[2]]
+
+	for i = 1, math.min( #current_line, rawchar - 1 ) do
+		if current_line:sub( i, i ) == "\t" then
+			rawchar = math.ceil( rawchar / tabWidth ) * tabWidth
+		end
+	end
+
+	-- rawchar is now absolute to character coordinate system
+
+	local line = lines[newline]
+	local relchar = 0
+
+	for i = 1, #line do
+		if rawchar - 1 < 0 then
+			break
+		end
+
+		relchar = relchar + 1
+		rawchar = line:sub( i, i ) == "\t" and math.floor( (rawchar - 1) / tabWidth ) * tabWidth or rawchar - 1
+	end
+
+	local new_rawchar = math.max( 1, relchar + rawchar )
+	local char = math.min( new_rawchar, #line + 1 )
+
+	return { cursor.toPosition( lines, newline, char ), newline, char, new_rawchar }
+end
 
 function cursor.new( ID )
 	return { ID = ID or newID(), position = { 1, 1, 1, 1 }, selection = false }
@@ -71,8 +107,6 @@ function cursor.merge( cursors ) -- takes a {cursor}
 			local minI, maxI = cursor.order( cursors[i] )
 			local minN, maxN = cursor.order( cursors[n] )
 
-			print( minI[1], minN[1] )
-
 			if minI[1] <= maxN[1] and minN[1] <= maxI[1] then
 				local min = cursor.smaller( minI, minN )
 				local max = cursor .larger( maxI, maxN )
@@ -117,15 +151,19 @@ function cursor.clamp( lines, c ) -- takes a cursor position or selection
 	return { c[1] + diff, c[2], c[4] + diff, c[4] }
 end
 
-function cursor.up( lines, c )
-	return c[2] > 1 and { cursor.toPosition( lines, c[2] - 1, c[3] ), c[2] - 1, c[3] } or { 1, 1, 1 }
+function cursor.up( lines, tabWidth, c ) -- { position in text, line, clamped character, raw character }
+	if c[2] > 1 then
+		return upOrDown( lines, tabWidth, c, c[2] - 1 )
+	else
+		return { 1, 1, 1, c[4] }
+	end
 end
 
-function cursor.down( lines, c )
+function cursor.down( lines, tabWidth, c )
 	if c[2] < #lines then
-		return { cursor.toPosition( lines, c[2] + 1, c[3] ), c[2] + 1, c[3] }
+		return upOrDown( lines, tabWidth, c, c[2] + 1 )
 	else
-		return { cursor.toPosition( lines, c[2], #lines[c[2]] + 1 ), c[2], #lines[c[2]] + 1 }
+		return { cursor.toPosition( lines, c[2], #lines[c[2]] + 1 ), c[2], #lines[c[2]] + 1, charcc }
 	end
 end
 

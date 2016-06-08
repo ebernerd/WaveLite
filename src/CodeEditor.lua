@@ -51,6 +51,15 @@ local function newCodeEditor()
 	editor.api = {}
 
 	local isMapping = false
+	local shouldMerge = true
+
+	local function tryMerge()
+		if isMapping then
+			shouldMerge = true
+		else
+			libcursor.merge( editor.cursors )
+		end
+	end
 
 	function editor.api.setLanguage( name )
 		editor.langname = name
@@ -102,13 +111,17 @@ local function newCodeEditor()
 			end
 		end
 
+		if shouldMerge then
+			libcursor.merge( editor.cursors )
+		end
+
 		isMapping = false
 	end
 
 	function editor.api.cursor_new( position, ID )
 		editor.cursors[#editor.cursors + 1] = libcursor.new()
 		editor.cursors[#editor.cursors].position = position
-		libcursor.merge( editor.cursors )
+		tryMerge()
 	end
 
 	function editor.api.cursor_set( position, ID )
@@ -119,17 +132,77 @@ local function newCodeEditor()
 	function editor.api.select_to( cursor, position )
 		cursor.selection = cursor.selection or cursor.position
 		cursor.position = position
-		libcursor.merge( editor.cursors )
+		tryMerge()
 	end
 
-	function editor.api.cursor_home( cursor )
-		cursor.position = { libcursor.toPosition( editor.lines, cursor.position[2] ), cursor.position[2], 1, 1 }
-		cursor.selection = false
+	function editor.api.cursor_home( cursor, options )
+		if options.select then
+			cursor.selection = cursor.selection or cursor.position
+			cursor.position = { libcursor.toPosition( editor.lines, options.full and 1 or cursor.position[2], 1 ), options.full and 1 or cursor.position[2], 1, 1 }
+			editor.cursorblink = 0
+		elseif cursor.selection then
+			cursor.position = libcursor.smaller( cursor.position, cursor.selection )
+			cursor.selection = false
+		else
+			cursor.position = { libcursor.toPosition( editor.lines, options.full and 1 or cursor.position[2], 1 ), options.full and 1 or cursor.position[2], 1, 1 }
+			cursor.selection = false
+			editor.cursorblink = 0
+		end
+		tryMerge()
 	end
 
-	function editor.api.cursor_end( cursor )
-		cursor.position = { libcursor.toPosition( editor.lines, math.huge ), cursor.position[2], #editor.lines[cursor.position[2]] + 1, math.huge }
-		cursor.selection = false
+	function editor.api.cursor_end( cursor, options )
+		if options.select then
+			cursor.selection = cursor.selection or cursor.position
+			cursor.position = { libcursor.toPosition( editor.lines, options.full and #editor.lines or cursor.position[2], math.huge ), options.full and #editor.lines or cursor.position[2], #editor.lines[cursor.position[2]] + 1, math.huge }
+			editor.cursorblink = 0
+		elseif cursor.selection then
+			cursor.position = libcursor.larger( cursor.position, cursor.selection )
+			cursor.selection = false
+		else
+			cursor.position = { libcursor.toPosition( editor.lines, options.full and #editor.lines or cursor.position[2], math.huge ), options.full and #editor.lines or cursor.position[2], #editor.lines[cursor.position[2]] + 1, math.huge }
+			cursor.selection = false
+			editor.cursorblink = 0
+		end
+		tryMerge()
+	end
+
+	function editor.api.cursor_up( cursor, options )
+		local tabWidth = libstyle.get( editor.style, "editor:Tabs.Width" )
+		if options.create then
+			local c = libcursor.new( options.ID )
+			c.position = libcursor.up( editor.lines, tabWidth, cursor.position )
+			editor.cursors[#editor.cursors + 1] = c
+		elseif options.select then
+			cursor.selection = cursor.selection or cursor.position
+			cursor.position = libcursor.up( editor.lines, tabWidth, cursor.position )
+		elseif cursor.selection then
+			cursor.position = libcursor.smaller( cursor.position, cursor.selection )
+			cursor.selection = false
+		else
+			cursor.position = libcursor.up( editor.lines, tabWidth, cursor.position )
+		end
+		tryMerge()
+		editor.cursorblink = 0
+	end
+
+	function editor.api.cursor_down( cursor, options )
+		local tabWidth = libstyle.get( editor.style, "editor:Tabs.Width" )
+		if options.create then
+			local c = libcursor.new( options.ID )
+			c.position = libcursor.down( editor.lines, tabWidth, cursor.position )
+			editor.cursors[#editor.cursors + 1] = c
+		elseif options.select then
+			cursor.selection = cursor.selection or cursor.position
+			cursor.position = libcursor.down( editor.lines, tabWidth, cursor.position )
+		elseif cursor.selection then
+			cursor.position = libcursor.larger( cursor.position, cursor.selection )
+			cursor.selection = false
+		else
+			cursor.position = libcursor.down( editor.lines, tabWidth, cursor.position )
+		end
+		tryMerge()
+		editor.cursorblink = 0
 	end
 
 	function editor.api.cursor_left( cursor, options )
@@ -146,7 +219,8 @@ local function newCodeEditor()
 		else
 			cursor.position = libcursor[options.by_word and "leftword" or "left"]( editor.lines, cursor.position )
 		end
-		libcursor.merge( editor.cursors )
+		tryMerge()
+		editor.cursorblink = 0
 	end
 
 	function editor.api.cursor_right( cursor, options )
@@ -163,7 +237,8 @@ local function newCodeEditor()
 		else
 			cursor.position = libcursor[options.by_word and "rightword" or "right"]( editor.lines, cursor.position )
 		end
-		libcursor.merge( editor.cursors )
+		tryMerge()
+		editor.cursorblink = 0
 	end
 
 	function editor.api.deselect( cursor )

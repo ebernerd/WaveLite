@@ -144,6 +144,54 @@ event.bind( "editor:key:ctrl-s", function( editor )
 	editor.map_cursors( editor.select_line )
 end )
 
+event.bind( "editor:key:kp7", function( editor )
+	editor.map_cursors( editor.cursor_home, nil, { select = false, create = false, full = false } )
+end )
+
+event.bind( "editor:key:kp1", function( editor )
+	editor.map_cursors( editor.cursor_end, nil, { select = false, create = false, full = false } )
+end )
+
+event.bind( "editor:key:shift-kp7", function( editor )
+	editor.map_cursors( editor.cursor_home, nil, { select = true, create = false, full = false } )
+end )
+
+event.bind( "editor:key:shift-kp1", function( editor )
+	editor.map_cursors( editor.cursor_end, nil, { select = true, create = false, full = false } )
+end )
+
+event.bind( "editor:key:ctrl-kp7", function( editor )
+	editor.map_cursors( editor.cursor_home, nil, { select = false, create = false, full = true } )
+end )
+
+event.bind( "editor:key:ctrl-kp1", function( editor )
+	editor.map_cursors( editor.cursor_end, nil, { select = false, create = false, full = true } )
+end )
+
+event.bind( "editor:key:up", function( editor )
+	editor.map_cursors( editor.cursor_up, nil, { select = false, create = false } )
+end )
+
+event.bind( "editor:key:down", function( editor )
+	editor.map_cursors( editor.cursor_down, nil, { select = false, create = false } )
+end )
+
+event.bind( "editor:key:alt-up", function( editor )
+	editor.map_cursors( editor.cursor_up, nil, { select = false, create = true } )
+end )
+
+event.bind( "editor:key:alt-down", function( editor )
+	editor.map_cursors( editor.cursor_down, nil, { select = false, create = true } )
+end )
+
+event.bind( "editor:key:shift-up", function( editor )
+	editor.map_cursors( editor.cursor_up, nil, { select = true, create = false } )
+end )
+
+event.bind( "editor:key:shift-down", function( editor )
+	editor.map_cursors( editor.cursor_down, nil, { select = true, create = false } )
+end )
+
 event.bind( "editor:key:left", function( editor )
 	editor.map_cursors( editor.cursor_left, nil, { select = false, by_word = false, create = false } )
 end )
