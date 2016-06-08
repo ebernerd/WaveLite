@@ -36,6 +36,10 @@ function util.roundup( n, b )
 	return math.ceil( n / b ) * b
 end
 
+function util.rounddown( n, b )
+	return math.floor( n / b ) * b
+end
+
 function util.lineWidthUpTo( line, x, font, tabWidthPixels )
 	local w = 0
 

@@ -18,9 +18,8 @@ function rendering.code( editor, self )
 	local tabWidth = libstyle.get( editor.style, "editor:Tabs.Width" )
 	local tabShown = libstyle.get( editor.style, "editor:Tabs.Shown" )
 	local tabColour = libstyle.get( editor.style, "editor:Tabs.Foreground" )
-	local tabWidthPixels = font:getWidth " " * (tabWidth or 4)
+	local tabWidthPixels = font:getWidth " " * tabWidth
 	local showLines = libstyle.get( editor.style, "editor:Lines.Shown" )
-	local showOutline = libstyle.get( editor.style, "editor:Outline.Shown" )
 	local linesWidth = font:getWidth( #editor.lines )
 	local linesPadding = libstyle.get( editor.style, "editor:Lines.Padding" )
 	local linesWidthPadding = linesWidth + 2 * linesPadding
@@ -130,17 +129,6 @@ function rendering.code( editor, self )
 
 		love.graphics.pop()
 	end
-
-	-- draw scrollbars
-
-	if showOutline then
-		love.graphics.setColor( libstyle.get( editor.style, "editor:Outline.Foreground" ) )
-		love.graphics.rectangle( "line", 0, 0, self.width, self.height )
-	end
-
-	-- ["editor:Scrollbar.Tray"] = rgb( 0xdddddd );
-	-- ["editor:Scrollbar.Slider"] = rgb( 0xbbbbbb );
-
 end
 
 return rendering

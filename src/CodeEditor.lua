@@ -11,6 +11,10 @@ local libscrollbar = require "src.scrollbar"
 local libstyle = require "src.style"
 local libresource = require "src.resource"
 
+local SCROLLBARSIZE = 16
+local SCROLLBARPADDING = 3
+local SCROLLBARMINSIZE = 64
+
 local function repositionEditor( editor, cursor )
 	local line = cursor[2]
 	local char = cursor[3]
@@ -18,9 +22,6 @@ local function repositionEditor( editor, cursor )
 	local fHeight = font:getHeight()
 	local space = font:getWidth " "
 	local tabWidth = libstyle.get( editor.style, "editor:Tabs.Width" ) * space
-	local showLines = libstyle.get( editor.style, "editor:Lines.Shown" )
-	local codePadding = libstyle.get( editor.style, "editor:Code.Padding" )
-	local linesWidthPadding = font:getWidth( #editor.lines ) + 2 * libstyle.get( editor.style, "editor:Lines.Padding" )
 
 	local yTop = fHeight * math.max( 0, line - 2 )
 	local yBottom = fHeight * math.min( #editor.lines, line + 1 )
@@ -34,8 +35,8 @@ local function repositionEditor( editor, cursor )
 		editor.scrollY = yTop
 	end
 
-	if xRight - editor.scrollX > editor.viewWidth - (showLines and linesWidthPadding or 0) - codePadding then
-		editor.scrollX = xRight - editor.viewWidth + (showLines and linesWidthPadding or 0) + codePadding
+	if xRight - editor.scrollX > editor.viewWidth then
+		editor.scrollX = xRight - editor.viewWidth
 	end
 
 	if xLeft - editor.scrollX < 0 then
@@ -44,10 +45,70 @@ local function repositionEditor( editor, cursor )
 end
 
 local function mouseToPosition( editor, x, y )
-	
+	local font = libstyle.get( editor.style, "editor:Font" )
+	local fontHeight = font:getHeight()
+	local linesWidth = font:getWidth( #editor.lines )
+	local linesPadding = libstyle.get( editor.style, "editor:Lines.Padding" )
+	local linesWidthPadding = linesWidth + 2 * linesPadding
+	local codePadding = libstyle.get( editor.style, "editor:Code.Padding" )
+	local tabWidth = libstyle.get( editor.style, "editor:Tabs.Width" )
+	local tabWidthPixels = font:getWidth " " * (tabWidth or 4)
+	local relativeX = x - linesWidthPadding - codePadding + editor.scrollX
+	local relativeY = y + editor.scrollY
+	local line = math.max( 1, math.min( #editor.lines, math.floor( relativeY / fontHeight ) + 1 ) )
+	local char = 0
+	local tline = editor.lines[line]
+	local totalWidth = 0
+
+	if relativeX < 0 then
+		return { libcursor.toPosition( editor.lines, line, 1 ), line, 1, 0 }
+	end
+
+	for i = 1, #tline do
+		local w
+		if tline:sub( i, i ) == "\t" then
+			w = tabWidthPixels - ((totalWidth + 1) % tabWidthPixels) + 1
+		else
+			w = font:getWidth( tline:sub( i, i ) )
+		end
+
+		char = char + 1
+
+		if totalWidth + w / 2 >= relativeX then
+			totalWidth = totalWidth + w
+			break
+		end
+
+		totalWidth = totalWidth + w
+	end
+
+	if totalWidth < relativeX then
+		char = char + 1
+	end
+
+	return { libcursor.toPosition( editor.lines, line, char ), line, char, char }
+
 end
 
-local SCROLLBARSIZE = 10
+local function rescrollX( editor )
+	local font = libstyle.get( editor.style, "editor:Font" )
+	local space = font:getWidth " "
+	editor.scrollX = 
+		math.max( 0, 
+			math.min( editor.contentWidth - editor.viewWidth + 2 * space,
+				editor.scrollBottomBarLeft * (editor.contentWidth - editor.viewWidth) / (editor.scrollBottom.width - SCROLLBARPADDING * 2 - editor.scrollBottomBarSize)
+			)
+		)
+end
+
+local function rescrollY( editor )
+	editor.scrollY = 
+		math.max( 0, 
+			math.min( editor.contentHeight - editor.viewHeight,
+				editor.scrollRightBarTop * (editor.contentHeight - editor.viewHeight) / (editor.scrollRight.height - SCROLLBARPADDING * 2 - editor.scrollRightBarSize)
+			)
+		)
+end
 
 local function newCodeEditor()
 
@@ -69,8 +130,8 @@ local function newCodeEditor()
 	editor.contentHeight = libstyle.get( editor.style, "editor:Font" ):getHeight()
 	editor.viewWidth = 0
 	editor.viewHeight = 0
-	editor.scrollRight = false
-	editor.scrollBottom = false
+	editor.scrollRight = editor.panel:add( UIPanel.new() )
+	editor.scrollBottom = editor.panel:add( UIPanel.new() )
 	editor.cursors = {
 		libcursor.new();
 	}
@@ -83,6 +144,64 @@ local function newCodeEditor()
 	editor.api = {}
 	editor.api.filters = {}
 	editor.api.position = {}
+
+	function editor.scrollRight:onDraw( stage )
+		if stage == "before" then
+
+			love.graphics.setColor( libstyle.get( editor.style, "editor:Scrollbar.Tray" ) )
+			love.graphics.rectangle( "fill", 0, 0, self.width, self.height )
+
+			love.graphics.setColor( libstyle.get( editor.style, "editor:Scrollbar.Slider" ) )
+			love.graphics.rectangle( "fill", SCROLLBARPADDING, SCROLLBARPADDING + editor.scrollRightBarTop, SCROLLBARSIZE - SCROLLBARPADDING * 2, editor.scrollRightBarSize )
+
+		end
+	end
+
+	function editor.scrollRight:onTouch( x, y, button )
+		if y < editor.scrollRightBarTop then
+			editor.scrollRightBarTop = math.max( SCROLLBARPADDING, y )
+			rescrollY(editor)
+		elseif y > editor.scrollRightBarTop + editor.scrollRightBarSize then
+			editor.scrollRightBarTop = math.min( self.height - SCROLLBARPADDING, y ) - editor.scrollRightBarSize
+			rescrollY(editor)
+		end
+
+		editor.scrollRightMountPosition = y - editor.scrollRightBarTop
+	end
+
+	function editor.scrollRight:onMove( x, y, button )
+		editor.scrollRightBarTop = y - editor.scrollRightMountPosition
+		rescrollY( editor )
+	end
+
+	function editor.scrollBottom:onDraw( stage )
+		if stage == "before" then
+
+			love.graphics.setColor( libstyle.get( editor.style, "editor:Scrollbar.Tray" ) )
+			love.graphics.rectangle( "fill", 0, 0, self.width, self.height )
+
+			love.graphics.setColor( libstyle.get( editor.style, "editor:Scrollbar.Slider" ) )
+			love.graphics.rectangle( "fill", SCROLLBARPADDING + editor.scrollBottomBarLeft, SCROLLBARPADDING, editor.scrollBottomBarSize, SCROLLBARSIZE - SCROLLBARPADDING * 2 )
+
+		end
+	end
+
+	function editor.scrollBottom:onTouch( x, y, button )
+		if x < editor.scrollBottomBarLeft then
+			editor.scrollBottomBarLeft = math.max( SCROLLBARPADDING, y )
+			rescrollX(editor)
+		elseif y > editor.scrollBottomBarLeft + editor.scrollBottomBarSize then
+			editor.scrollBottomBarLeft = math.min( self.width - SCROLLBARPADDING, y ) - editor.scrollBottomBarSize
+			rescrollX(editor)
+		end
+
+		editor.scrollBottomMountPosition = x - editor.scrollBottomBarLeft
+	end
+
+	function editor.scrollBottom:onMove( x, y, button )
+		editor.scrollBottomBarLeft = x - editor.scrollBottomMountPosition
+		rescrollX( editor )
+	end
 
 	local isMapping = false
 	local shouldMerge = true
@@ -165,7 +284,7 @@ local function newCodeEditor()
 		return #editor.cursors
 	end
 
-	function editor.api.map_cursors( f, filter, ... )
+	function editor.api.map( f, filter, ... )
 		local t = {} -- libcursor.sort( editor.cursors )
 
 		for i = 1, #editor.cursors do
@@ -189,7 +308,7 @@ local function newCodeEditor()
 		return editor.api
 	end
 
-	function editor.api.cursor_new( position, ID )
+	function editor.api.new_cursor( position, ID )
 		editor.cursors[#editor.cursors + 1] = libcursor.new()
 		editor.cursors[#editor.cursors].position = position
 		repositionEditor( editor, editor.cursors[#editor.cursors].position )
@@ -198,7 +317,7 @@ local function newCodeEditor()
 		return editor.api
 	end
 
-	function editor.api.cursor_set( position, ID )
+	function editor.api.set_cursor( position, ID )
 		editor.cursors[1] = libcursor.new( ID )
 		editor.cursors[1].position = position
 		repositionEditor( editor, editor.cursors[1].position )
@@ -206,7 +325,7 @@ local function newCodeEditor()
 		return editor.api
 	end
 
-	function editor.api.cursor_remove( cursor )
+	function editor.api.remove( cursor )
 		for i = #editor.cursors, 1, -1 do
 			if editor.cursors[i] == cursor then
 				table.remove( editor.cursors, i )
@@ -382,6 +501,22 @@ local function newCodeEditor()
 		return editor.api
 	end
 
+	function editor.api.filters.first()
+		local i = 0
+		return function()
+			i = i + 1
+			return i == 1
+		end
+	end
+
+	function editor.api.filters.last()
+		local i = 0
+		return function()
+			i = i + 1
+			return i == #editor.cursors
+		end
+	end
+
 	function editor.api.filters.eofline( cursor )
 		return cursor.position[3] == #editor.lines[cursor.position[2]] + 1
 	end
@@ -411,16 +546,58 @@ local function newCodeEditor()
 	function editor.panel:onDraw( stage )
 		if stage == "before" then
 			librendering.code( editor, self )
+		elseif stage == "after" and libstyle.get( editor.style, "editor:Outline.Shown" ) then
+			love.graphics.setColor( libstyle.get( editor.style, "editor:Outline.Foreground" ) )
+			love.graphics.rectangle( "line", 0, 0, self.width, self.height )
 		end
 	end
 
 	function editor.panel:onUpdate( dt )
-		if editor.contentWidth > self.width or editor.contentHeight > self.height then
-			editor.scrollRight, editor.scrollBottom = editor.contentWidth - SCROLLBARSIZE > self.width, editor.contentHeight - SCROLLBARSIZE > self.height
+		local font = libstyle.get( editor.style, "editor:Font" )
+		local tabWidth = libstyle.get( editor.style, "editor:Tabs.Width" )
+		local tabWidthPixels = font:getWidth " " * tabWidth
+		local fHeight = font:getHeight()
+		local showLines = libstyle.get( editor.style, "editor:Lines.Shown" )
+		local codePadding = libstyle.get( editor.style, "editor:Code.Padding" )
+		local linesWidthPadding = font:getWidth( #editor.lines ) + 2 * libstyle.get( editor.style, "editor:Lines.Padding" )
+		local contentDisplayWidth = self.width - codePadding - (showLines and linesWidthPadding or 0)
+		local space = font:getWidth " "
+
+		editor.contentHeight = fHeight * #editor.lines
+		editor.contentWidth = 0
+
+		for i = 1, #editor.lines do
+			editor.contentWidth = math.max( editor.contentWidth, util.lineWidthUpTo( editor.lines[i], #editor.lines[i] + 1, font, tabWidthPixels ) )
 		end
 
-		editor.viewWidth = self.width - (editor.scrollRight and SCROLLBARSIZE or 0)
-		editor.viewHeight = self.height - (editor.scrollBottom and SCROLLBARSIZE or 0)
+		if editor.contentWidth > contentDisplayWidth or editor.contentHeight > self.height then
+			editor.scrollBottom.visible, editor.scrollRight.visible = editor.contentWidth - SCROLLBARSIZE > contentDisplayWidth, editor.contentHeight - SCROLLBARSIZE > self.height
+		else
+			editor.scrollBottom.visible, editor.scrollRight.visible = false, false
+		end
+
+		editor.viewWidth = contentDisplayWidth - (editor.scrollRight.visible and SCROLLBARSIZE or 0)
+		editor.viewHeight = self.height - (editor.scrollBottom.visible and SCROLLBARSIZE or 0)
+
+		if editor.scrollRight.visible then
+			editor.scrollRight.x = self.width - SCROLLBARSIZE
+			editor.scrollRight.y = 0
+			editor.scrollRight.width = SCROLLBARSIZE
+			editor.scrollRight.height = editor.viewHeight
+
+			editor.scrollRightBarSize = math.max( SCROLLBARMINSIZE, editor.viewHeight / editor.contentHeight * (editor.scrollRight.height - SCROLLBARPADDING * 2) )
+			editor.scrollRightBarTop  = editor.scrollY / (editor.contentHeight - editor.viewHeight) * (editor.scrollRight.height - SCROLLBARPADDING * 2 - editor.scrollRightBarSize)
+		end
+
+		if editor.scrollBottom.visible then
+			editor.scrollBottom.x = 0
+			editor.scrollBottom.y = self.height - SCROLLBARSIZE
+			editor.scrollBottom.width = editor.viewWidth + codePadding + linesWidthPadding
+			editor.scrollBottom.height = SCROLLBARSIZE
+
+			editor.scrollBottomBarSize = math.max( SCROLLBARMINSIZE, editor.viewWidth / (editor.contentWidth + space + space) * (editor.scrollBottom.width - SCROLLBARPADDING * 2) )
+			editor.scrollBottomBarLeft = editor.scrollX / (editor.contentWidth + space + space - editor.viewWidth) * (editor.scrollBottom.width - SCROLLBARPADDING * 2 - editor.scrollBottomBarSize)
+		end
 
 		editor.cursorblink = editor.cursorblink + dt
 	end
@@ -439,15 +616,15 @@ local function newCodeEditor()
 		libevent.invoke( "editor:" ..
 			(util.isCtrlHeld() and "ctrl-" or "") ..
 			(util.isAltHeld() and "alt-" or "") .. 
-			(util.isShiftHeld() and "shift-" or "") .. "touch", editor.api, x, y, button ) -- change to use char coords
+			(util.isShiftHeld() and "shift-" or "") .. "touch", editor.api, mouseToPosition( editor, x, y ), button ) -- change to use char coords
 	end
 
 	function editor.panel:onMove( x, y, button )
-		libevent.invoke( "editor:move", editor.api, x, y, button ) -- change to use char coords
+		libevent.invoke( "editor:move", editor.api, mouseToPosition( editor, x, y ), button ) -- change to use char coords
 	end
 
 	function editor.panel:onRelease( x, y, button )
-		libevent.invoke( "editor:release", editor.api, x, y, button ) -- change to use char coords
+		libevent.invoke( "editor:release", editor.api, mouseToPosition( editor, x, y ), button ) -- change to use char coords
 	end
 
 	function editor.panel:onKeypress( key )

@@ -31,7 +31,7 @@ UIPanel.main:add( editor2.panel )
 
 local editor3 = require "src.CodeEditor" ()
 
-editor3.panel.x = 300
+editor3.panel.x = 675
 editor3.panel.y = 200
 editor3.panel:resize( 300, 250 )
 
