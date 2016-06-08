@@ -62,7 +62,6 @@ function text_editor.write( lines, formatting, cursors, cursor, text )
 	end
 
 	libformatting.format( lines, formatting, min[2], math.max( max[2], min[2] + #newlines - 1 ) )
-	libcursor.merge( cursors )
 end
 
 return text_editor

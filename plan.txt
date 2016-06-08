@@ -45,13 +45,6 @@ Events
 
 
 API
-
-	editor.*
-		string copy(cursor)
-
-		editor cursor_up(cursor, options {bool select, bool create, ID | create})
-		editor cursor_down(cursor, options {bool select, bool create, ID | create})
-
 	WaveLite.*
 		event
 			void bind(string event, function callback)

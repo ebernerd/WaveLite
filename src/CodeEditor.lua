@@ -43,6 +43,10 @@ local function repositionEditor( editor, cursor )
 	end
 end
 
+local function mouseToPosition( editor, x, y )
+	
+end
+
 local SCROLLBARSIZE = 10
 
 local function newCodeEditor()
@@ -124,6 +128,7 @@ local function newCodeEditor()
 		libtext_editor.write( editor.lines, editor.formatting, editor.cursors, cursor, text )
 		editor.cursorblink = 0
 		repositionEditor( editor, cursor.position )
+		tryMerge()
 
 		return editor.api
 	end
