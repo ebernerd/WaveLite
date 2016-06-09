@@ -1,41 +1,11 @@
 
-require "resources.plugins.core"
-require "resources.plugins.custom"
+local UIPanel = require "src.elements.UIPanel"
 
 -- require "src.ser" --table serialization
 -- options = require "src.options"
 -- packages = require "src.packages"
 
-local editor = require "src.editor"
-local UIPanel = require "src.UIPanel"
-
-local editor = require "src.CodeEditor" ()
-
-editor.panel.x = 100
-editor.panel.y = 100
-editor.panel:resize( 600, 400 )
-editor.panel:focus()
-
-UIPanel.main:add( editor.panel )
-
-
-local editor2 = require "src.CodeEditor" ()
-
-editor2.panel.x = 750
-editor2.panel.y = 50
-editor2.panel:resize( 200, 300 )
-editor2.style = require "resources.styles.dark"
-
-UIPanel.main:add( editor2.panel )
-
-
-local editor3 = require "src.CodeEditor" ()
-
-editor3.panel.x = 675
-editor3.panel.y = 200
-editor3.panel:resize( 300, 250 )
-
-UIPanel.main:add( editor3.panel )
+require "src.WaveLite"
 
 function love.load()
 	love.keyboard.setKeyRepeat( true )

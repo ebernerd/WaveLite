@@ -1,5 +1,5 @@
 
-local util = require "src.util"
+local util = require "src.lib.util"
 
 local formatting = {}
 

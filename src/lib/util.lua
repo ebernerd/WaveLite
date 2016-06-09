@@ -1,6 +1,12 @@
 
 local util = {}
 
+function util.protected_table( t )
+	return setmetatable( {}, { __index = t, __newindex = function( _, k, v )
+		return error( "attempt to set index '" .. tostring(k) .. "' to <" .. type(v) .. ">" )
+	end } )
+end
+
 function util.copyt( t )
 	local t2 = {}
 	for k, v in pairs( t ) do
@@ -36,10 +42,6 @@ function util.roundup( n, b )
 	return math.ceil( n / b ) * b
 end
 
-function util.rounddown( n, b )
-	return math.floor( n / b ) * b
-end
-
 function util.lineWidthUpTo( line, x, font, tabWidthPixels )
 	local w = 0
 
@@ -54,18 +56,6 @@ function util.lineWidthUpTo( line, x, font, tabWidthPixels )
 	end
 
 	return w
-end
-
-function util.lookup_style( style, index )
-	local parts = {}
-	for part in index:gmatch "[^%.]+" do
-		parts[#parts + 1] = part
-	end
-	for n = #parts, 1, -1 do
-		local i = table.concat( parts, ".", 1, n )
-		if style[i] then return style[i] end
-	end
-	return style[parts[1]:gsub( "%w+$", "default" )]
 end
 
 function util.formatText( text )

@@ -1,6 +1,6 @@
 
-local event = require "src.event"
-local plugin = require "src.plugin"
+local event = require "src.lib.event"
+local res = require "src.lib.resource"
 
 local light_theme = true
 local language = 0

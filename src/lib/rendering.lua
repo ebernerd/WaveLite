@@ -1,14 +1,9 @@
 
-local UIPanel = require "src.UIPanel"
-local util = require "src.util"
-local libcursor = require "src.cursor"
-local libformatting = require "src.formatting"
-local libtext_editor = require "src.text_editor"
-local libtext_window = require "src.text_window"
-local libevent = require "src.event"
-local libscrollbar = require "src.scrollbar"
+local UIPanel = require "src.elements.UIPanel"
+local util = require "src.lib.util"
+local libcursor = require "src.lib.cursor"
+local libformatting = require "src.lib.formatting"
 local libstyle = require "src.style"
-local libresource = require "src.resource"
 
 local rendering = {}
 

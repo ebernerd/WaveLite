@@ -1,5 +1,5 @@
 
-local formatting = require "src.formatting"
+local formatting = require "src.lib.formatting"
 
 return formatting.newFormatter {
 	keywords = {

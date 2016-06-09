@@ -1,6 +1,6 @@
 
-local libconfig = require "src.config"
-local rgb = require "src.util" .rgb
+local libconfig = require "src.lib.config"
+local rgb = require "src.lib.util" .rgb
 
 local template = {
 	["syntax:Keyword"] = rgb( 0xc53d67 );

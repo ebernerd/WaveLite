@@ -1,8 +1,6 @@
 
-local plugin = require "src.plugin"
-local event = require "src.event"
-local editor = require "src.editor"
-local res = require "src.resource"
+local event = require "src.lib.event"
+local res = require "src.lib.resource"
 
 res.register( "style", "light", "resources.styles.light" )
 res.register( "style", "dark", "resources.styles.dark" )

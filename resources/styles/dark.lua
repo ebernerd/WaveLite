@@ -1,6 +1,6 @@
 
 local style = require "src.style"
-local rgb = require "src.util" .rgb
+local rgb = require "src.lib.util" .rgb
 
 return style.new {
 	["syntax:Keyword"] = rgb( 0xff70c0 ); -- 0xf06aa0

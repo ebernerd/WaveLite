@@ -1,5 +1,5 @@
 
-local libformatting = require "src.formatting"
+local libformatting = require "src.lib.formatting"
 local libstyle = require "src.style"
 
 local loaders = {}

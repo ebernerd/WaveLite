@@ -1,7 +1,7 @@
 
-local util = require "src.util"
-local libcursor = require "src.cursor"
-local libformatting = require "src.formatting"
+local util = require "src.lib.util"
+local libcursor = require "src.lib.cursor"
+local libformatting = require "src.lib.formatting"
 
 local text_editor = {}
 
