@@ -84,9 +84,8 @@ local function newCodeEditor( title, content )
 	local editor = UIPanel.new()
 
 	editor.title = title or "untitled"
-	editor.style = libresource.load( "style", "light" )
+	editor.style = libresource.load( "style", "core:light" )
 	editor.lines = util.splitlines( content or "" )
-	editor.language = "plain text"
 	editor.formatting = {
 		lines = { "" };
 		states = { [0] = {} };
@@ -105,8 +104,8 @@ local function newCodeEditor( title, content )
 		libcursor.new();
 	}
 	editor.cursorblink = 0
-	editor.langname = "plain text"
-	editor.stylename = "light"
+	editor.langname = "core:plain text"
+	editor.stylename = "core:light"
 
 	editor.api = newEditorAPI( editor )
 

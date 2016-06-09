@@ -1,14 +1,15 @@
 
 local UIPanel = require "src.elements.UIPanel"
 local style = require "src.style"
+local plugin = require "src.lib.plugin"
 
 local WaveLite = {}
 
 WaveLite.style_UI = style.new()
 WaveLite.style_code = style.new()
 
-require "resources.plugins.core"
-require "resources.plugins.custom"
+plugin.load( "core", "resources/plugins/core.lua" )
+plugin.load( "custom", "resources/plugins/custom.lua" )
 
 -- global configs, settings, reference to main pane handler, etc
 

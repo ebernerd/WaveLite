@@ -1,35 +1,32 @@
 
-local event = require "src.lib.event"
-local res = require "src.lib.resource"
-
 local light_theme = true
 local language = 0
 
-event.bind( "editor:key:ctrl-tab #style=light", function(editor)
-	editor.setStyle "dark"
+WaveLite.event.bind( "editor:key:ctrl-tab #style=core:light", function(editor)
+	editor.setStyle "core:dark"
 end )
 
-event.bind( "editor:key:ctrl-tab #style=dark", function(editor)
-	editor.setStyle "light"
+WaveLite.event.bind( "editor:key:ctrl-tab #style=core:dark", function(editor)
+	editor.setStyle "core:light"
 end )
 
-event.bind( "editor:key:ctrl-f #language=lua", function(editor)
-	editor.setLanguage "plain text"
+WaveLite.event.bind( "editor:key:ctrl-f #language=core:lua", function(editor)
+	editor.setLanguage "core:plain text"
 end )
 
-event.bind( "editor:key:ctrl-f #language=flux", function(editor)
-	editor.setLanguage "lua"
+WaveLite.event.bind( "editor:key:ctrl-f #language=core:flux", function(editor)
+	editor.setLanguage "core:lua"
 end )
 
-event.bind( "editor:key:ctrl-f #language=plain text", function(editor)
-	editor.setLanguage "flux"
+WaveLite.event.bind( "editor:key:ctrl-f #language=core:plain text", function(editor)
+	editor.setLanguage "core:flux"
 end )
 
-event.bind( "editor:key:ctrl-i", function( editor )
+WaveLite.event.bind( "editor:key:ctrl-i", function( editor )
 
 	editor.map( function( c ) -- map through all cursors
 		editor.robot( function( cursor ) -- create a robot for each one
-			editor.move_cursor( cursor, c.position ) -- move it to the target cursor
+			editor.goto_cursor_position( cursor, c.position ) -- move it to the target cursor
 			editor.cursor_home( cursor, {} ) -- go to the start of the line
 			editor.write( cursor, "\t" ) -- write a tab
 		end )
@@ -37,11 +34,11 @@ event.bind( "editor:key:ctrl-i", function( editor )
 
 end )
 
-event.bind( "editor:key:ctrl-shift-i", function(editor)
+WaveLite.event.bind( "editor:key:ctrl-shift-i", function(editor)
 
 	editor.map( function( c )
 		editor.robot( function(cursor)
-			editor.move_cursor( cursor, c.position )
+			editor.goto_cursor_position( cursor, c.position )
 			editor.cursor_home( cursor, {} )
 
 			if editor.read( cursor, true ):sub( 1, 1 ) == "\t" then

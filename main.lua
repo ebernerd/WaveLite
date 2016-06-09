@@ -1,5 +1,6 @@
 
 local UIPanel = require "src.elements.UIPanel"
+local plugin = require "src.lib.plugin"
 
 -- require "src.ser" --table serialization
 -- options = require "src.options"
@@ -12,6 +13,7 @@ function love.load()
 end
 
 function love.update(dt)
+	plugin.update( dt )
 	UIPanel.main:update( dt )
 end
 

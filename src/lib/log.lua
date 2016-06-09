@@ -1,7 +1,7 @@
 
 local log = {}
 
-log.path = os.clock() .. ".log"
+log.path = os.time() .. ".log"
 
 function log:new( path )
 	return setmetatable( { path = path }, { __index = self } )

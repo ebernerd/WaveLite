@@ -2,7 +2,7 @@
 local event = {}
 local events = {}
 
-function event.bind( event, callback )
+function event.bind( event, callback, binder )
 	local conditions = {}
 
 	if event:find "#" then
@@ -14,15 +14,29 @@ function event.bind( event, callback )
 	end
 
 	events[event] = events[event] or {}
-	events[event][#events[event] + 1] = { callback = callback, conditions = conditions }
+	events[event][#events[event] + 1] = { callback = callback, conditions = conditions, binder = binder }
 end
 
-function event.unbind( event, callback )
+function event.unbind( event, callback, binder )
 	if events[event] then
 		for i = #events[event], 1, -1 do
-			if events[event][i].callback == callback then
+			if events[event][i].callback == callback and (not binder or events[event][i].binder == binder) then
 				table.remove( events[event], i )
 			end
+		end
+	end
+end
+
+function event.unbind_binder( binder, ename )
+	if ename then
+		for i = #events[ename], 1, -1 do
+			if events[ename][i].binder == binder then
+				table.remove( events[ename], i )
+			end
+		end
+	else
+		for k, v in pairs( events ) do
+			event.unbind_binder( binder, k )
 		end
 	end
 end

@@ -1,10 +1,19 @@
 
 local log = require "src.lib.log"
+local event = require "src.lib.event"
 
 local loaded = {}
 
 local function getenv( name )
+	-- uuuuuugh
 
+	local env = setmetatable( {}, { __index = getfenv() } ) -- just for now until I can list all the Lua functions that will be safe to give over
+
+	env.WaveLite = require "src.lib.apis.WaveLite" (name)
+	env.system = require "src.lib.apis.system"
+	env.util = require "src.lib.apis.util"
+
+	return env
 end
 
 local function load( name, path )
@@ -33,19 +42,29 @@ local plugin = {}
 
 function plugin.update()
 	for k, v in pairs( loaded ) do
-		if love.filesystem.getModifiedTime( v.path ) > v.time then
+		if love.filesystem.getLastModified( v.path ) > v.time then
 			plugin.reload( k )
 		end
 	end
 end
 
-function plugin.load( name )
-	-- find path
-	load( name, path )
+function plugin.load( name, path )
+	if not path then
+
+		-- look in Project path, ehh, WaveLite.project_path?
+		-- look in /user/plugins
+		-- look in /WaveLite/plugins
+
+	end
+
+	if path then
+		load( name, path )
+	end
 end
 
 function plugin.unload( name )
-	-- stuff
+	event.unbind_binder( name )
+	loaded[name] = nil
 end
 
 function plugin.reload( name )
