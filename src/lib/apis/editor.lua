@@ -157,9 +157,37 @@ local function newEditorAPI( editor )
 		return public
 	end
 
-	function api.move_cursor( cursor, position )
+	function api.goto_cursor_position( cursor, position )
 		cursor.position = { position[1], position[2], position[3], position[4] }
 		cursor.selection = false
+		tryMerge()
+	end
+
+	function api.goto_char( cursor, char )
+		cursor.selection = false
+		cursor.position = { libcursor.toPosition( editor.lines, cursor.position[2], char ), cursor.position[2], math.min( char, #editor.lines[cursor.position[2]] + 1 ), char }
+		tryMerge()
+	end
+
+	function api.goto_line( cursor, line )
+		line = math.max( 1, math.min( line, #editor.lines ) )
+		cursor.selection = false
+		cursor.position = { libcursor.toPosition( editor.lines, line, cursor.position[3] ), line, cursor.position[3], cursor.position[4] }
+		tryMerge()
+	end
+
+	function api.goto_position( cursor, position )
+		local line, char
+		local len = #editor.lines - 1
+
+		for i = 1, #editor.lines do
+			len = len + #editor.lines[i]
+		end
+
+		position = math.max( math.min( position, len ), 1 )
+		line, char = libcursor.toLineChar( position )
+		cursor.selection = false
+		cursor.position = { position, line, char, char }
 		tryMerge()
 	end
 
