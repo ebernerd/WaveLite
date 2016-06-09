@@ -79,13 +79,13 @@ local function rescrollY( editor )
 		)
 end
 
-local function newCodeEditor()
+local function newCodeEditor( title, content )
 
 	local editor = UIPanel.new()
 
-	editor.title = "something"
+	editor.title = title or "untitled"
 	editor.style = libresource.load( "style", "light" )
-	editor.lines = { "" }
+	editor.lines = util.splitlines( content or "" )
 	editor.language = "plain text"
 	editor.formatting = {
 		lines = { "" };
@@ -111,6 +111,8 @@ local function newCodeEditor()
 	editor.api = newEditorAPI( editor )
 
 	editor.enable_keyboard = true
+
+	libformatting.format( editor.lines, editor.formatting )
 
 	function editor.scrollRight:onDraw( stage )
 		if stage == "before" then
@@ -172,7 +174,7 @@ local function newCodeEditor()
 
 	function editor:onDraw( stage )
 		if stage == "before" then
-			librendering.code( editor, self )
+			librendering.code( editor )
 		elseif stage == "after" and libstyle.get( editor.style, "editor:Outline.Shown" ) then
 			love.graphics.setColor( libstyle.get( editor.style, "editor:Outline.Foreground" ) )
 			love.graphics.rectangle( "line", 0, 0, self.width, self.height )

@@ -82,9 +82,6 @@ local template = {
 		["editor:Cursor.FullCharWidth"] = false;
 
 	["editor:Font"] = love.graphics.newFont( "resources/fonts/Inconsolata/Inconsolata.otf", 18 );
-
-
-
 }
 
 local function get( value )

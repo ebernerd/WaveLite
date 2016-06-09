@@ -1,6 +1,7 @@
 
+local scissor = require "src.lib.scissor"
+
 local touches = {}
-local scissors = {}
 local focussed = nil
 
 local function globalX( child )
@@ -15,17 +16,6 @@ local function findRecursive( x, y, children )
 	for i = #children, 1, -1 do
 		if children[i].visible and x >= children[i].x and y >= children[i].y and x < children[i].x + children[i].width and y < children[i].y + children[i].height then
 			local child = findRecursive( x - children[i].x, y - children[i].y, children[i].children ) or children[i].enable_mouse and children[i]
-			if child then
-				return child
-			end
-		end
-	end
-end
-
-local function findKeyRecursive( children )
-	for i = #children, 1, -1 do
-		if children[i].visible then
-			local child = findKeyRecursive( children[i].children ) or children[i].enable_keyboard and children[i]
 			if child then
 				return child
 			end
@@ -77,10 +67,9 @@ local function newUIPanel( x, y, width, height )
 
 	function panel:draw( x, y )
 		x, y = x or 0, y or 0
-		scissors[#scissors + 1] = { x + self.x, y + self.y, self.width, self.height }
 
 		love.graphics.push()
-			love.graphics.intersectScissor( x + self.x, y + self.y, self.width, self.height )
+			scissor.push( x + self.x, y + self.y, self.width, self.height )
 			love.graphics.translate( self.x, self.y )
 
 			self:onDraw "before"
@@ -90,18 +79,8 @@ local function newUIPanel( x, y, width, height )
 				end
 			end
 			self:onDraw "after"
+			scissor.pop()
 		love.graphics.pop()
-
-		scissors[#scissors] = nil
-		if scissors[1] then
-			love.graphics.setScissor(unpack(scissors[1]))
-
-			for i = 2, #scissors do
-				love.graphics.intersectScissor(unpack(scissors[i]))
-			end
-		else
-			love.graphics.setScissor()
-		end
 	end
 
 	function panel:update( dt )

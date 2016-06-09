@@ -7,7 +7,11 @@ local libstyle = require "src.style"
 
 local rendering = {}
 
-function rendering.code( editor, self )
+function rendering.tabs( tabs )
+	
+end
+
+function rendering.code( editor )
 	local font = libstyle.get( editor.style, "editor:Font" )
 	local fontHeight = font:getHeight()
 	local tabWidth = libstyle.get( editor.style, "editor:Tabs.Width" )
@@ -27,7 +31,7 @@ function rendering.code( editor, self )
 
 	love.graphics.setFont( font )
 	love.graphics.setColor( libstyle.get( editor.style, "editor:Code.Background" ) )
-	love.graphics.rectangle( "fill", 0, 0, self.width, self.height )
+	love.graphics.rectangle( "fill", 0, 0, editor.width, editor.height )
 
 	love.graphics.push()
 	love.graphics.translate( linesWidthPadding + codePadding - editor.scrollX, -editor.scrollY )
@@ -70,7 +74,7 @@ function rendering.code( editor, self )
 
 				if min[2] <= i and max[2] >= i then
 					local start = min[2] < i and 0 or util.lineWidthUpTo( editor.lines[i], min[3], font, tabWidthPixels )
-					local finish = max[2] > i and self.width or util.lineWidthUpTo( editor.lines[i], max[3], font, tabWidthPixels )
+					local finish = max[2] > i and editor.width or util.lineWidthUpTo( editor.lines[i], max[3], font, tabWidthPixels )
 
 					love.graphics.rectangle( "fill", start, (i - 1) * fontHeight, finish - start, fontHeight )
 
@@ -99,7 +103,7 @@ function rendering.code( editor, self )
 	love.graphics.setColor( col[1], col[2], col[3], fullCharWidth and 40 or 255 )
 
 	for i = 1, #editor.cursors do
-		if self.focussed and editor.cursorblink % 1 < 0.5 then
+		if editor.focussed and editor.cursorblink % 1 < 0.5 then
 			cx, cy = editor.cursors[i].position[3], editor.cursors[i].position[2]
 			fx = util.lineWidthUpTo( editor.lines[cy], cx, font, tabWidthPixels )
 			fy = (cy - 1) * fontHeight

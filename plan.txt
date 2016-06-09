@@ -1,99 +1,15 @@
 
-Styles
+Events:
 
-	editor:
-
-		Font
-
-		Outline
-			Foreground
-			Shown
-
-		Code
-			Background
-				Selected
-			Foreground
-			TabWidth
-			TabForeground
-			Padding
-
-		Lines
-			Background
-			Foreground
-			Shown
-			Padding
-
-
-Events
-
-	"editor:key:X" (editor, key)
-
-	"editor:touch" (editor, position)
-	"editor:ctrl-touch" (editor, position)
-	"editor:ctrl-alt-touch" (editor, position)
-	"editor:ctrl-shift-touch" (editor, position)
-	"editor:ctrl-alt-shift-touch" (editor, position)
-	"editor:alt-touch" (editor, position)
-	"editor:alt-shift-touch" (editor, position)
-	"editor:shift-touch" (editor, position)
-	"editor:move" (editor, position)
-	"editor:release" (editor, position)
-
-	"editor:create" (editor)
-	"editor:save" (editor)
+	"editor:open" (editor)
 	"editor:close" (editor)
-
-
-API
-	WaveLite.*
-		event
-			void bind(string event, function callback)
-			void unbind(string event, function callback)
-			void invoke(string event, ...)
-		editor
-			editor open(string type, options {dependant on type})
-			editor close(editor)
-			editor register(string type, string name, data)
-
-
-	system
-		string platform()
-		void copy(string text)
-		string paste()
-
-
-Tab types:
-
-
-
-
-
 
 Other stuff
 
-
-
-
-	Why hello there!
-
-	By the way, make the window fullscreen to read all this.
-
 	Here's what needs to be done:
-		Tabs are totally hacked together right now... a bunch of "    "s hardcoded in and they're just horrible.
-		You need to fix tabs, as well as navigating around them.
-		Having monospaced fonts would be great I tell you.
-
+		Up/down needs to work
 		Plugins and resources should load with a proper environment.
-
-		Clicking needs to be an event. Dragging needs to be in the plugin API.
-			selection = plugin.api.beginSelection( line, char, append )
-			plugin.api.updateSelection( selection, line, char )
-			plugin.api.finishSelection( selection )
-		Also double click and stuff.
-
-		Scrollbars are great but also a little glitchy and also hacked together.
-		Make a nice, consistent interface that everything can use. Make the scrollbars draggable too.
-		Maybe make scrollbars a part of UIPanel?
+		Double click and stuff.
 
 		It would be nice to have styles work like this:
 		{syntax.Constant.String:"oooh this is an {#Escape;\\'}escaped{#Escape;\\'} string"}
@@ -101,20 +17,9 @@ Other stuff
 		You could also implement underlining and bold {@underline:text}, maybe even more later on
 		Also maybe {@underline, @bold, syntax:Constant.Keyword;stuff}
 
-		Events should have selectors, something like this
-		event.bind("editor:key:ctrl-l#language:lua;style:blah;filename:this")
-
 		The UI needs work. Add in stuff for adding buttons on the top.
 		Add some kind of list framework on the side too.
 		Need to add the bar on the bottom. It'll have methods to add stuff to the left/right sides.
 		It should space them out evenly and clip middle ones if necessary
 
 		Ctrl-z, Ctrl-y, history, shizzle like that
-
-		Instantiatable text editor panel so you can have them all over the place. Need a 'focussed' parameter.
-			UIPanel.getTextFocus(self)
-
-		Oh this means you'll need to pass an editor object around
-			event.bind("editor:key:left", function(editor)
-				editor.cursor_left()
-			end)
