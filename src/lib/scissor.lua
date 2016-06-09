@@ -16,7 +16,6 @@ function scissor.push( x, y, width, height )
 	stack[#stack + 1] = stack[1] == nil and { x, y, width, height } or stack[#stack] and bbox( x, y, width, height, unpack( stack[#stack] ) ) or false
 
 	if stack[#stack] then
-		print( unpack( stack[#stack] ) )
 		love.graphics.setScissor( unpack( stack[#stack] ) )
 	else
 		love.graphics.setScissor( 0, 0, 0, 0 )

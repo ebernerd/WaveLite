@@ -6,46 +6,14 @@ local libresource = require "src.lib.resource"
 local util = require "src.lib.util"
 local libformatting = require "src.lib.formatting"
 
-local function repositionEditor( editor, cursor )
-	local line = cursor[2]
-	local char = cursor[3]
-	local font = libstyle.get( editor.style, "editor:Font" )
-	local fHeight = font:getHeight()
-	local space = font:getWidth " "
-	local tabWidth = libstyle.get( editor.style, "editor:Tabs.Width" ) * space
-
-	local yTop = fHeight * math.max( 0, line - 2 )
-	local yBottom = fHeight * math.min( #editor.lines, line + 1 )
-	local xLeft = util.lineWidthUpTo( editor.lines[line], math.max( 1, char - 1 ), font, tabWidth )
-	local xRight = util.lineWidthUpTo( editor.lines[line], char, font, tabWidth ) + space + space
-
-	if yBottom - editor.scrollY > editor.viewHeight then
-		editor.scrollY = yBottom - editor.viewHeight
-	end
-	if yTop - editor.scrollY < 0 then
-		editor.scrollY = yTop
-	end
-
-	if xRight - editor.scrollX > editor.viewWidth then
-		editor.scrollX = xRight - editor.viewWidth
-	end
-
-	if xLeft - editor.scrollX < 0 then
-		editor.scrollX = xLeft
-	end
-end
+local repositionEditor
 
 local function newEditorAPI( editor )
 
 	local api = {}
 	local filters = {}
 	local positions = {}
-
 	local public = util.protected_table( api )
-
-	api.filters = util.protected_table( filters )
-	api.positions = util.protected_table( positions )
-
 	local isMapping = false
 	local shouldMerge = true
 
@@ -56,6 +24,9 @@ local function newEditorAPI( editor )
 			libcursor.merge( editor.cursors )
 		end
 	end
+
+	api.filters = util.protected_table( filters )
+	api.positions = util.protected_table( positions )
 
 	function api.resetCursorBlink()
 		editor.cursorblink = 0
@@ -109,7 +80,7 @@ local function newEditorAPI( editor )
 		return public
 	end
 
-	function api.copy( cursor, copyLine )
+	function api.read( cursor, copyLine )
 		if cursor.selection then
 			local min, max = libcursor.order( cursor )
 
@@ -121,6 +92,7 @@ local function newEditorAPI( editor )
 		elseif copyLine then
 			return editor.lines[cursor.position[2]]
 		end
+		return nil
 	end
 
 	function api.cursor_count()
@@ -128,7 +100,7 @@ local function newEditorAPI( editor )
 	end
 
 	function api.map( f, filter, ... )
-		local t = {} -- libcursor.sort( editor.cursors )
+		local t = {}
 
 		for i = 1, #editor.cursors do
 			t[i] = editor.cursors[i]
@@ -151,9 +123,26 @@ local function newEditorAPI( editor )
 		return public
 	end
 
+	function api.robot( f, ... )
+		local cursor = libcursor.new()
+		return f and f( cursor, ... ) or cursor
+	end
+
+	function api.lines()
+		return #editor.lines
+	end
+
+	function api.line( n )
+		return editor.lines[n or 1]
+	end
+
+	function api.fline( n )
+		return editor.formatting.lines[n or 1]
+	end
+
 	function api.new_cursor( position, ID )
-		editor.cursors[#editor.cursors + 1] = libcursor.new()
-		editor.cursors[#editor.cursors].position = position
+		editor.cursors[#editor.cursors + 1] = libcursor.new( ID )
+		editor.cursors[#editor.cursors].position = position or { 1, 1, 1, 1 }
 		repositionEditor( editor, editor.cursors[#editor.cursors].position )
 		tryMerge()
 
@@ -161,9 +150,24 @@ local function newEditorAPI( editor )
 	end
 
 	function api.set_cursor( position, ID )
-		editor.cursors[1] = libcursor.new( ID )
+		editor.cursors = { libcursor.new( ID ) }
 		editor.cursors[1].position = position
 		repositionEditor( editor, editor.cursors[1].position )
+
+		return public
+	end
+
+	function api.move_cursor( cursor, position )
+		cursor.position = { position[1], position[2], position[3], position[4] }
+		cursor.selection = false
+		tryMerge()
+	end
+
+	function api.select_to( cursor, position )
+		cursor.selection = cursor.selection or cursor.position
+		cursor.position = { position[1], position[2], position[3], position[4] }
+		repositionEditor( editor, cursor.position )
+		tryMerge()
 
 		return public
 	end
@@ -178,16 +182,9 @@ local function newEditorAPI( editor )
 		return public
 	end
 
-	function api.select_to( cursor, position )
-		cursor.selection = cursor.selection or cursor.position
-		cursor.position = position
-		repositionEditor( editor, cursor.position )
-		tryMerge()
-
-		return public
-	end
-
 	function api.cursor_home( cursor, options )
+		options = options or {}
+
 		if options.select then
 			cursor.selection = cursor.selection or cursor.position
 			cursor.position = { libcursor.toPosition( editor.lines, options.full and 1 or cursor.position[2], 1 ), options.full and 1 or cursor.position[2], 1, 1 }
@@ -208,6 +205,8 @@ local function newEditorAPI( editor )
 	end
 
 	function api.cursor_end( cursor, options )
+		options = options or {}
+
 		if options.select then
 			cursor.selection = cursor.selection or cursor.position
 			cursor.position = { libcursor.toPosition( editor.lines, options.full and #editor.lines or cursor.position[2], math.huge ), options.full and #editor.lines or cursor.position[2], #editor.lines[options.full and #editor.lines or cursor.position[2]] + 1, math.huge }
@@ -228,6 +227,8 @@ local function newEditorAPI( editor )
 	end
 
 	function api.cursor_up( cursor, options )
+		options = options or {}
+
 		local tabWidth = libstyle.get( editor.style, "editor:Tabs.Width" )
 		if options.create then
 			local c = libcursor.new( options.ID )
@@ -252,6 +253,8 @@ local function newEditorAPI( editor )
 	end
 
 	function api.cursor_down( cursor, options )
+		options = options or {}
+
 		local tabWidth = libstyle.get( editor.style, "editor:Tabs.Width" )
 		if options.create then
 			local c = libcursor.new( options.ID )
@@ -276,6 +279,8 @@ local function newEditorAPI( editor )
 	end
 
 	function api.cursor_left( cursor, options )
+		options = options or {}
+
 		if options.create then
 			local c = libcursor.new( options.ID )
 			c.position = libcursor[options.by_word and "leftword" or "left"]( editor.lines, cursor.position )
@@ -299,6 +304,8 @@ local function newEditorAPI( editor )
 	end
 
 	function api.cursor_right( cursor, options )
+		options = options or {}
+
 		if options.create then
 			local c = libcursor.new( options.ID )
 			c.position = libcursor[options.by_word and "rightword" or "right"]( editor.lines, cursor.position )
@@ -384,9 +391,44 @@ local function newEditorAPI( editor )
 		end
 	end
 
+	function filters.negate( f )
+		return function( ... )
+			return not f( ... )
+		end
+	end
+
 	filters.count = filters.count_start
 
 	return public
+end
+
+function repositionEditor( editor, cursor )
+	local line = cursor[2]
+	local char = cursor[3]
+	local font = libstyle.get( editor.style, "editor:Font" )
+	local fHeight = font:getHeight()
+	local space = font:getWidth " "
+	local tabWidth = libstyle.get( editor.style, "editor:Tabs.Width" ) * space
+
+	local yTop = fHeight * math.max( 0, line - 2 )
+	local yBottom = fHeight * math.min( #editor.lines, line + 1 )
+	local xLeft = util.lineWidthUpTo( editor.lines[line], math.max( 1, char - 1 ), font, tabWidth )
+	local xRight = util.lineWidthUpTo( editor.lines[line], char, font, tabWidth ) + space + space
+
+	if yBottom - editor.scrollY > editor.viewHeight then
+		editor.scrollY = yBottom - editor.viewHeight
+	end
+	if yTop - editor.scrollY < 0 then
+		editor.scrollY = yTop
+	end
+
+	if xRight - editor.scrollX > editor.viewWidth then
+		editor.scrollX = xRight - editor.viewWidth
+	end
+
+	if xLeft - editor.scrollX < 0 then
+		editor.scrollX = xLeft
+	end
 end
 
 return newEditorAPI

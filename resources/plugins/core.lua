@@ -32,7 +32,7 @@ end )
 event.bind( "editor:key:ctrl-c", function( editor )
 	local t = {}
 	editor.map( function( cursor )
-		local text = editor.copy( cursor )
+		local text = editor.read( cursor )
 		t[#t + 1] = text
 	end )
 	love.system.setClipboardText( table.concat( t, "\n" ) )
@@ -41,7 +41,7 @@ end )
 event.bind( "editor:key:ctrl-shift-c", function( editor )
 	local t = {}
 	editor.map( function( cursor )
-		local text = editor.copy( cursor, true )
+		local text = editor.read( cursor, true )
 		t[#t + 1] = text
 	end )
 	love.system.setClipboardText( table.concat( t, "\n" ) )
@@ -50,7 +50,7 @@ end )
 event.bind( "editor:key:ctrl-x", function( editor )
 	local t = {}
 	editor.map( function( cursor )
-		local text = editor.copy( cursor )
+		local text = editor.read( cursor )
 		t[#t + 1] = text
 	end )
 		.map( editor.write, nil, "" )
@@ -60,7 +60,7 @@ end )
 event.bind( "editor:key:ctrl-shift-x", function( editor )
 	local t = {}
 	editor.map( function( cursor )
-		local text = editor.copy( cursor, true )
+		local text = editor.read( cursor, true )
 		t[#t + 1] = text
 	end )
 		.map( editor.write, nil, "" )
@@ -85,7 +85,7 @@ end )
 
 event.bind( "editor:key:ctrl-a", function( editor ) -- select all text
 	editor
-		.map( editor.remove_cursor, editor.filters.count_start (editor.cursor_count() - 1) )
+		.map( editor.remove, editor.filters.negate( editor.filters.first() ) )
 		.map( editor.cursor_home, nil, { full = true } )
 		.map( editor.cursor_end, nil, { full = true, select = true } )
 end )
