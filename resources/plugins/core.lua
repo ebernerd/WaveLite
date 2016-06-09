@@ -22,6 +22,10 @@ WaveLite.event.bind( "editor:ctrl-touch", function(editor, position)
 	end
 end )
 
+WaveLite.event.bind( "editor:shift-touch", function(editor, position)
+	editor.map( editor.select_to, editor.filters.last(), position )
+end )
+
 WaveLite.event.bind( "editor:move", function(editor, position)
 	editor.map( editor.select_to, editor.filters.last(), position )
 end )

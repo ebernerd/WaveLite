@@ -2,6 +2,20 @@
 local util = {}
 
 function util.protected_table( t )
+	local newt = setmetatable( {}, { __index = t } )
+	local changed = false
+
+	for k, v in pairs( t ) do
+		if type( v ) == "table" then
+			newt[k] = util.protected_table( v )
+			changed = true
+		end
+	end
+
+	if changed then
+		t = newt
+	end
+
 	return setmetatable( {}, { __index = t, __newindex = function( _, k, v )
 		return error( "attempt to set index '" .. tostring(k) .. "' to <" .. type(v) .. ">" )
 	end } )
