@@ -14,6 +14,15 @@ function rendering.tabs( tabs )
 	local fHeight = font:getHeight()
 	local x = 0
 	local y = (tabs.display.height - fHeight) / 2
+	local twidth = tabs.selected_left
+
+	if not tabs.tweening then
+		twidth = 0
+
+		for i = 1, tabs.toIndex - 1 do
+			twidth = twidth + tabs.tabwidths[i]
+		end	
+	end
 
 	love.graphics.setFont( font )
 	
@@ -24,7 +33,7 @@ function rendering.tabs( tabs )
 	love.graphics.translate( -tabs.scrollX, 0 )
 
 	love.graphics.setColor( libstyle.get( WaveLite.style_UI, "Tabs:Selected" ) )
-	love.graphics.rectangle( "fill", tabs.selected_left, 0, tabs.selected_size, tabs.display.height )
+	love.graphics.rectangle( "fill", twidth, 0, tabs.tweening and tabs.selected_size or tabs.tabwidths[tabs.toIndex], tabs.display.height )
 
 	for i = 1, #tabs.editors do
 		local offset = (tabs.tabwidths[i] - font:getWidth( tabs.editors[i].title )) / 2

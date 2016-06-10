@@ -48,6 +48,7 @@ local function newTabManager()
 	tabs.toIndex = 0
 	tabs.display.enable_keyboard = true
 	tabs.enable_keyboard = true
+	tabs.tweening = false
 
 	function tabs.display:onTouch( x )
 		self.mount = tabs.scrollX + x
@@ -188,6 +189,8 @@ local function newTabManager()
 
 		recalcwidths( self )
 
+		tabs.tweening = false
+
 		if tabs.selected_left_tween then
 			local total = 0
 
@@ -200,6 +203,8 @@ local function newTabManager()
 			if _finished then
 				tabs.selected_left_tween = nil
 			end
+
+			tabs.tweening = true
 		end
 
 		if tabs.selected_size_tween then
@@ -208,9 +213,11 @@ local function newTabManager()
 			if _finished then
 				tabs.selected_size_tween = nil
 			end
+
+			tabs.tweening = true
 		end
 
-		if tabs.selected_left_tween or tabs.selected_size_tween then
+		if tabs.tweening then
 			if tabs.selected_left < tabs.scrollX then
 				tabs.scrollX = tabs.selected_left
 			elseif tabs.selected_left + tabs.selected_size > tabs.scrollX + tabs.width then

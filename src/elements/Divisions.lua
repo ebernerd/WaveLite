@@ -99,7 +99,7 @@ local function newDivisions( direction, ... )
 					self.child_two_pos = self.children[self.divider_bound + 1][self.direction == "vertical" and "y" or "x"]
 				
 					event:handle()
-					
+
 					break
 				else
 					self.divider_bound = false
@@ -114,9 +114,9 @@ local function newDivisions( direction, ... )
 				local diff = self.direction == "vertical" and event.y - self.touches[ID].y or event.x - self.touches[event.ID].x
 
 				if self.direction == "vertical" then
-					--[[self.children[self.divider_bound + 1]:resize( self.children[self.divider_bound + 1].width, self.children[self.divider_bound + 1].height - diff )
-					self.children[self.divider_bound + 1].y = self.children[self.divider_bound + 1].y + diff
-					self.children[self.divider_bound]:resize( self.children[self.divider_bound].width, self.children[self.divider_bound].height + diff )]]
+					self.children[self.divider_bound + 1]:resize( self.children[self.divider_bound + 1].width, self.child_two_size - diff )
+					self.children[self.divider_bound + 1].y = self.child_two_pos + diff
+					self.children[self.divider_bound]:resize( self.children[self.divider_bound].width, self.child_one_size + diff )
 				else
 					self.children[self.divider_bound + 1]:resize( self.child_two_size - diff, self.children[self.divider_bound + 1].height )
 					self.children[self.divider_bound + 1].x = self.child_two_pos + diff
