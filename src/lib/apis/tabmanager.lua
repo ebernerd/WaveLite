@@ -40,11 +40,7 @@ local function newTabManagerAPI(tabs)
 	end
 
 	function api.focus( editor )
-		if tabs.focussedTab ~= false then
-			tabs.focussedTab.visible = false
-		end
-		tabs.focussedTab = editor
-		editor:focus()
+		tabs:switchTo( editor )
 	end
 
 	return public

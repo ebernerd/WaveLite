@@ -1,15 +1,15 @@
 
 local UIPanel = require "src.elements.UIPanel"
 local plugin = require "src.lib.plugin"
+local WaveLite = require "src.WaveLite"
 
 -- require "src.ser" --table serialization
 -- options = require "src.options"
 -- packages = require "src.packages"
 
-require "src.WaveLite"
-
 function love.load()
 	love.keyboard.setKeyRepeat( true )
+	WaveLite.load()
 end
 
 function love.update(dt)

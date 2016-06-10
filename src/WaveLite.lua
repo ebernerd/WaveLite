@@ -8,21 +8,30 @@ local WaveLite = {}
 WaveLite.style_UI = style.new()
 WaveLite.style_code = style.new()
 
-plugin.load( "core", "resources/plugins/core.lua" )
-plugin.load( "custom", "resources/plugins/custom.lua" )
+function WaveLite.load()
+	plugin.load( "core", "resources/plugins/core.lua" )
+	plugin.load( "custom", "resources/plugins/custom.lua" )
 
--- global configs, settings, reference to main pane handler, etc
+	-- global configs, settings, reference to main pane handler, etc
 
-local tabs = require "src.elements.TabManager" ()
-local editor = tabs.api.open( "blank" )
+	local tabs = require "src.elements.TabManager" ()
+	local editor = tabs.api.open( "blank", "thing" )
 
-tabs.x = 100
-tabs.y = 100
-tabs:resize( 600, 400 )
-editor:focus()
+	for i = 1, 10 do
+		tabs.api.open( "blank", "thing " .. i )
+	end
 
-function tabs:onParentResized()
-	self:resize( self.parent.width - self.x - 10, self.parent.height - self.y - 10 )
+	tabs:switchTo( editor )
+
+	tabs.x = 100
+	tabs.y = 100
+	tabs:resize( 600, 400 )
+
+	function tabs:onParentResized()
+		self:resize( self.parent.width - self.x - 10, self.parent.height - self.y - 10 )
+	end
+
+	UIPanel.main:add( tabs )
 end
 
-UIPanel.main:add( tabs )
+return WaveLite

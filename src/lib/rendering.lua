@@ -4,11 +4,43 @@ local util = require "src.lib.util"
 local libcursor = require "src.lib.cursor"
 local libformatting = require "src.lib.formatting"
 local libstyle = require "src.style"
+local WaveLite = require "src.WaveLite"
 
 local rendering = {}
 
 function rendering.tabs( tabs )
+	local font = libstyle.get( WaveLite.style_UI, "Tabs:Font" )
+	local padding = libstyle.get( WaveLite.style_UI, "Tabs:Padding" )
+	local fHeight = font:getHeight()
+	local x = 0
+	local y = (tabs.display.height - fHeight) / 2
+
+	love.graphics.setFont( font )
 	
+	love.graphics.setColor( libstyle.get( WaveLite.style_UI, "Tabs:Background" ) )
+	love.graphics.rectangle( "fill", 0, 0, tabs.width, tabs.display.height )
+
+	love.graphics.push()
+	love.graphics.translate( -tabs.scrollX, 0 )
+
+	love.graphics.setColor( libstyle.get( WaveLite.style_UI, "Tabs:Selected" ) )
+	love.graphics.rectangle( "fill", tabs.selected_left, 0, tabs.selected_size, tabs.display.height )
+
+	for i = 1, #tabs.editors do
+		local offset = (tabs.tabwidths[i] - font:getWidth( tabs.editors[i].title )) / 2
+
+		love.graphics.setColor( libstyle.get( WaveLite.style_UI, "Tabs:Foreground" ) )
+		love.graphics.print( tabs.editors[i].title, x + offset, y )
+
+		x = x + tabs.tabwidths[i]
+
+		if i < #tabs.editors then
+			love.graphics.setColor( libstyle.get( WaveLite.style_UI, "Tabs:Divider" ) )
+			love.graphics.line( x, 0, x, tabs.display.height )
+		end
+	end
+
+	love.graphics.pop()
 end
 
 function rendering.code( editor )

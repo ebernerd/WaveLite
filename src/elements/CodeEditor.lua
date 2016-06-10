@@ -92,6 +92,7 @@ local function newCodeEditor( title, content )
 		formatter = function( line ) return util.formatText( line ) end;
 	}
 	editor.focussed = false
+	editor.enable_keyboard = true
 	editor.scrollX = 0
 	editor.scrollY = 0
 	editor.contentWidth = 0
@@ -100,6 +101,10 @@ local function newCodeEditor( title, content )
 	editor.viewHeight = 0
 	editor.scrollRight = editor:add( UIPanel.new() )
 	editor.scrollBottom = editor:add( UIPanel.new() )
+	editor.scrollRightBarTop = 0
+	editor.scrollRightBarSize = 0
+	editor.scrollBottomBarLeft = 0
+	editor.scrollBottomBarSize = 0
 	editor.cursors = {
 		libcursor.new();
 	}
@@ -108,8 +113,6 @@ local function newCodeEditor( title, content )
 	editor.stylename = "core:light"
 
 	editor.api = newEditorAPI( editor )
-
-	editor.enable_keyboard = true
 
 	libformatting.format( editor.lines, editor.formatting )
 

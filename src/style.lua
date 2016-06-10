@@ -3,85 +3,96 @@ local libconfig = require "src.lib.config"
 local rgb = require "src.lib.util" .rgb
 
 local template = {
-	["syntax:Keyword"] = rgb( 0xc53d67 );
+	["syntax"] = nil;
+		["syntax:Keyword"] = rgb( 0xc53d67 );
 
-	["syntax:Operator"] = rgb( 0xc53d67 );
-		["syntax:Operator.Math.Add"] = nil;
-		["syntax:Operator.Math.Sub"] = nil;
-		["syntax:Operator.Math.Mul"] = nil;
-		["syntax:Operator.Math.Div"] = nil;
-		["syntax:Operator.Math.Mod"] = nil;
-		["syntax:Operator.Math.Pow"] = nil;
-			["syntax:Operator.Math.Unary.Minus"] = nil;
+		["syntax:Operator"] = rgb( 0xc53d67 );
+			["syntax:Operator.Math.Add"] = nil;
+			["syntax:Operator.Math.Sub"] = nil;
+			["syntax:Operator.Math.Mul"] = nil;
+			["syntax:Operator.Math.Div"] = nil;
+			["syntax:Operator.Math.Mod"] = nil;
+			["syntax:Operator.Math.Pow"] = nil;
+				["syntax:Operator.Math.Unary.Minus"] = nil;
 
-		["syntax:Operator.Bitwise.And"] = nil;
-		["syntax:Operator.Bitwise.Or"] = nil;
-		["syntax:Operator.Bitwise.Xor"] = nil;
-		["syntax:Operator.Bitwise.Lshift"] = nil;
-		["syntax:Operator.Bitwise.Rshift"] = nil;
-			["syntax:Operator.Bitwise.Unary.Bnot"] = nil;
+			["syntax:Operator.Bitwise.And"] = nil;
+			["syntax:Operator.Bitwise.Or"] = nil;
+			["syntax:Operator.Bitwise.Xor"] = nil;
+			["syntax:Operator.Bitwise.Lshift"] = nil;
+			["syntax:Operator.Bitwise.Rshift"] = nil;
+				["syntax:Operator.Bitwise.Unary.Bnot"] = nil;
 
-		["syntax:Operator.Comparison.Eq"] = nil;
-		["syntax:Operator.Comparison.Neq"] = nil;
-		["syntax:Operator.Comparison.Lt"] = nil;
-		["syntax:Operator.Comparison.Gt"] = nil;
-		["syntax:Operator.Comparison.Lte"] = nil;
-		["syntax:Operator.Comparison.Gte"] = nil;
+			["syntax:Operator.Comparison.Eq"] = nil;
+			["syntax:Operator.Comparison.Neq"] = nil;
+			["syntax:Operator.Comparison.Lt"] = nil;
+			["syntax:Operator.Comparison.Gt"] = nil;
+			["syntax:Operator.Comparison.Lte"] = nil;
+			["syntax:Operator.Comparison.Gte"] = nil;
 
-		["syntax:Operator.Logic.And"] = nil;
-		["syntax:Operator.Logic.Or"] = nil;
-			["syntax:Operator.Logic.Unary.Not"] = nil;
+			["syntax:Operator.Logic.And"] = nil;
+			["syntax:Operator.Logic.Or"] = nil;
+				["syntax:Operator.Logic.Unary.Not"] = nil;
 
-		["syntax:Operator.Unary.Len"] = nil;
+			["syntax:Operator.Unary.Len"] = nil;
 
-	["syntax:Constant"] = rgb( 0x1070a0 );
-		["syntax:Constant.String"] = rgb( 0x1070a0 );
-		["syntax:Constant.Number"] = rgb( 0x1070a0 );
-			["syntax:Constant.Number.Integer"] = nil;
-		["syntax:Constant.Boolean"] = rgb( 0xed912c );
-		["syntax:Constant.Character"] = nil;
-		["syntax:Constant.Null"] = nil;
-		["syntax:Constant.Identifier"] = rgb( 0x404040 );
+		["syntax:Constant"] = rgb( 0x1070a0 );
+			["syntax:Constant.String"] = rgb( 0x1070a0 );
+			["syntax:Constant.Number"] = rgb( 0x1070a0 );
+				["syntax:Constant.Number.Integer"] = nil;
+			["syntax:Constant.Boolean"] = rgb( 0xed912c );
+			["syntax:Constant.Character"] = nil;
+			["syntax:Constant.Null"] = nil;
+			["syntax:Constant.Identifier"] = rgb( 0x404040 );
 
-	["syntax:Library"] = rgb( 0x3092c6 );
-		["syntax:Library.Native"] = rgb( 0x3092c6 );
-		["syntax:Library.User"] = rgb( 0x3092c6 );
+		["syntax:Library"] = rgb( 0x3092c6 );
+			["syntax:Library.Native"] = rgb( 0x3092c6 );
+			["syntax:Library.User"] = rgb( 0x3092c6 );
 
-	["syntax:Comment"] = rgb( 0x919d9f );
-	["syntax:Typename"] = rgb( 0x80a0e0 );
-	["syntax:default"] = rgb( 0x404040 );
+		["syntax:Comment"] = rgb( 0x919d9f );
+		["syntax:Typename"] = rgb( 0x80a0e0 );
+		["syntax:default"] = rgb( 0x404040 );
 
 	-- editor settings
-	["editor:Outline"] = nil;
-		["editor:Outline.Foreground"] = rgb( 0x404040 );
-		["editor:Outline.Shown"] = true;
+	["editor"] = nil;
+		["editor:Outline"] = nil;
+			["editor:Outline.Foreground"] = rgb( 0x404040 );
+			["editor:Outline.Shown"] = true;
 
-	["editor:Code"] = nil;
-		["editor:Code.Background"] = rgb( 0xfafafa );
-			["editor:Code.Background.Selected"] = { 80, 160, 255, 40 };
-		["editor:Code.Foreground"] = rgb( 0x404040 );
-		["editor:Code.Padding"] = 10;
+		["editor:Code"] = nil;
+			["editor:Code.Background"] = rgb( 0xfafafa );
+				["editor:Code.Background.Selected"] = { 80, 160, 255, 40 };
+			["editor:Code.Foreground"] = rgb( 0x404040 );
+			["editor:Code.Padding"] = 10;
 
-	["editor:Tabs"] = nil;
-		["editor:Tabs.Width"] = "@editor:TabWidth";
-		["editor:Tabs.Foreground"] = rgb( 0xd0d0d0 );
-		["editor:Tabs.Shown"] = true;
+		["editor:Tabs"] = nil;
+			["editor:Tabs.Width"] = 4;
+			["editor:Tabs.Foreground"] = rgb( 0xd0d0d0 );
+			["editor:Tabs.Shown"] = true;
 
-	["editor:Lines"] = nil;
-		["editor:Lines.Background"] = rgb( 0xf5f5f5 );
-		["editor:Lines.Foreground"] = rgb( 0xb0b0b0 );
-		["editor:Lines.Shown"] = true;
-		["editor:Lines.Padding"] = 20;
+		["editor:Lines"] = nil;
+			["editor:Lines.Background"] = rgb( 0xf5f5f5 );
+			["editor:Lines.Foreground"] = rgb( 0xb0b0b0 );
+			["editor:Lines.Shown"] = true;
+			["editor:Lines.Padding"] = 20;
 
-	["editor:Scrollbar"] = nil;
-		["editor:Scrollbar.Tray"] = rgb( 0xdddddd );
-		["editor:Scrollbar.Slider"] = rgb( 0xbbbbbb );
+		["editor:Scrollbar"] = nil;
+			["editor:Scrollbar.Tray"] = rgb( 0xdddddd );
+			["editor:Scrollbar.Slider"] = rgb( 0xbbbbbb );
 
-	["editor:Cursor"] = nil;
-		["editor:Cursor.Foreground"] = rgb( 0x303030 );
-		["editor:Cursor.FullCharWidth"] = false;
+		["editor:Cursor"] = nil;
+			["editor:Cursor.Foreground"] = rgb( 0x303030 );
+			["editor:Cursor.FullCharWidth"] = false;
 
-	["editor:Font"] = love.graphics.newFont( "resources/fonts/Inconsolata/Inconsolata.otf", 18 );
+		["editor:Font"] = love.graphics.newFont( "resources/fonts/Inconsolata/Inconsolata.otf", 18 );
+
+	["Tabs"] = nil;
+		["Tabs:Background"] = rgb( 0xf0f0f0 );
+		["Tabs:Foreground"] = { 0, 0, 0, 150 };
+		["Tabs:Padding"] = 32;
+		["Tabs:Divider"] = { 0, 0, 0, 20 };
+		["Tabs:Selected"] = { 100, 180, 255 };
+		["Tabs:Expand"] = true;
+		["Tabs:Font"] = love.graphics.newFont( "resources/fonts/Exo.otf", 20 );
 }
 
 local function get( value )
