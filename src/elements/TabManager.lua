@@ -7,7 +7,7 @@ local newTabManagerAPI = require "src.lib.apis.tabmanager"
 local tween = require "src.lib.tween"
 
 local TABPADDING = 5
-local TRANSITION_TIME = 0.2
+local TRANSITION_TIME = 0.3
 local _finished
 
 local function recalcwidths( tabs )
@@ -93,16 +93,11 @@ local function newTabManager()
 		editor.y = tabs.display.height
 		editor.width = self.width
 		editor.height = self.height - tabs.display.height
-
-		if self.visibleTab then
-			self.visibleTab.visible = false
-			self.visibleTab = editor
-		end
+		editor.visible = false
 
 		recalcwidths( self )
-		self:switchTo( editor )
 
-		return self:add( editor )
+		return self:add( editor ).api
 	end
 
 	function tabs:removeEditor( editor )
@@ -120,13 +115,13 @@ local function newTabManager()
 	function tabs:switchTo( editor )
 		local w = 0
 
-		if self.visibleTab ~= false then
+		if self.visibleTab then
 			self.visibleTab.visible = false
 		end
 
 		editor.visible = true
-		self.visibleTab = editor
 		editor:focus()
+		self.visibleTab = editor
 
 		for i = 1, #self.editors do
 			if self.editors[i] == editor then
@@ -194,6 +189,12 @@ local function newTabManager()
 			if _finished then
 				tabs.selected_size_tween = nil
 			end
+		end
+
+		if tabs.selected_left < tabs.scrollX then
+			tabs.scrollX = tabs.selected_left
+		elseif tabs.selected_left + tabs.selected_size > tabs.scrollX + tabs.width then
+			tabs.scrollX = tabs.selected_left + tabs.selected_size - tabs.width
 		end
 	end
 

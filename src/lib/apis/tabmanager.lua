@@ -39,10 +39,6 @@ local function newTabManagerAPI(tabs)
 		end
 	end
 
-	function api.focus( editor )
-		tabs:switchTo( editor )
-	end
-
 	return public
 
 end

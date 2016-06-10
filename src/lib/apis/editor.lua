@@ -28,6 +28,16 @@ local function newEditorAPI( editor )
 	api.filters = util.protected_table( filters )
 	api.positions = util.protected_table( positions )
 
+	function api.tabs()
+		return editor.parent.api
+	end
+
+	function api.focus()
+		editor.parent:switchTo( editor )
+
+		return public
+	end
+
 	function api.resetCursorBlink()
 		editor.cursorblink = 0
 		return public

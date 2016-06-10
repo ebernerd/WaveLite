@@ -48,3 +48,10 @@ WaveLite.event.bind( "editor:key:ctrl-shift-i", function(editor)
 	end )
 
 end )
+
+WaveLite.event.bind( "editor:key:ctrl-t", function(editor)
+	local new_editor = editor.tabs().open( "content", "\n -- This is awesome!\n" )
+
+	new_editor.focus()
+	new_editor.setLanguage( editor.language() )
+end )

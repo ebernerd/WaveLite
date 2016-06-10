@@ -18,12 +18,12 @@ function WaveLite.load()
 	local editor = tabs.api.open( "blank", "thing" )
 
 	for i = 1, 10 do
-		tabs.api.open( "blank", "thing " .. i )
+		tabs.api.open( "content", "\n -- This is some stuff for tab " .. i .. "\n", "thing " .. i )
 	end
 
-	tabs:switchTo( editor )
+	editor.focus()
 
-	tabs.x = 100
+	tabs.x = 200
 	tabs.y = 100
 	tabs:resize( 600, 400 )
 

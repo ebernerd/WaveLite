@@ -10,7 +10,7 @@ local function getenv( name )
 	local env = setmetatable( {}, { __index = getfenv() } ) -- just for now until I can list all the Lua functions that will be safe to give over
 
 	env.WaveLite = require "src.lib.apis.WaveLite" (name)
-	env.system = require "src.lib.apis.system"
+	env.system = require "src.lib.apis.system" (name)
 	env.util = require "src.lib.apis.util"
 
 	return env

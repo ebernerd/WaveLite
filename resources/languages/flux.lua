@@ -144,7 +144,7 @@ return formatting.newFormatter {
 	strings = {
 		start = {
 			line = "[\"\']";
-			multiline = "[\"\']";
+			multiline = "`";
 		};
 		finish = {
 			line = "%1";
@@ -152,7 +152,7 @@ return formatting.newFormatter {
 		};
 		escape = {
 			line = "\\";
-			multiline = "\\";
+			multiline = false;
 		};
 	};
 }

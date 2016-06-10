@@ -12,6 +12,7 @@ WaveLite.event.bind( "editor:touch", function(editor, position)
 	else
 		editor.set_cursor( position )
 	end
+	system.show_keyboard()
 end )
 
 WaveLite.event.bind( "editor:ctrl-touch", function(editor, position)
@@ -20,10 +21,12 @@ WaveLite.event.bind( "editor:ctrl-touch", function(editor, position)
 	else
 		editor.new_cursor( position )
 	end
+	system.show_keyboard()
 end )
 
 WaveLite.event.bind( "editor:shift-touch", function(editor, position)
 	editor.map( editor.select_to, editor.filters.last(), position )
+	system.show_keyboard()
 end )
 
 WaveLite.event.bind( "editor:move", function(editor, position)
@@ -36,7 +39,7 @@ WaveLite.event.bind( "editor:key:ctrl-c", function( editor )
 		local text = editor.read( cursor )
 		t[#t + 1] = text
 	end )
-	love.system.setClipboardText( table.concat( t, "\n" ) )
+	system.copy( table.concat( t, "\n" ) )
 end )
 
 WaveLite.event.bind( "editor:key:ctrl-shift-c", function( editor )
@@ -45,7 +48,7 @@ WaveLite.event.bind( "editor:key:ctrl-shift-c", function( editor )
 		local text = editor.read( cursor, true )
 		t[#t + 1] = text
 	end )
-	love.system.setClipboardText( table.concat( t, "\n" ) )
+	system.copy( table.concat( t, "\n" ) )
 end )
 
 WaveLite.event.bind( "editor:key:ctrl-x", function( editor )
@@ -55,7 +58,7 @@ WaveLite.event.bind( "editor:key:ctrl-x", function( editor )
 		t[#t + 1] = text
 	end )
 		.map( editor.write, nil, "" )
-	love.system.setClipboardText( table.concat( t, "\n" ) )
+	system.copy( table.concat( t, "\n" ) )
 end )
 
 WaveLite.event.bind( "editor:key:ctrl-shift-x", function( editor )
@@ -65,15 +68,15 @@ WaveLite.event.bind( "editor:key:ctrl-shift-x", function( editor )
 		t[#t + 1] = text
 	end )
 		.map( editor.write, nil, "" )
-	love.system.setClipboardText( table.concat( t, "\n" ) )
+	system.copy( table.concat( t, "\n" ) )
 end )
 
 WaveLite.event.bind( "editor:key:ctrl-v", function( editor )
-	editor.map( editor.write, nil, love.system.getClipboardText() )
+	editor.map( editor.write, nil, system.paste() )
 end )
 
-WaveLite.event.bind( "editor:key:ctrl-t", function( editor ) -- remove cursors from the end of a line
-	editor.map( editor.remove_cursor, editor.filters.eofline ).resetCursorBlink()
+WaveLite.event.bind( "editor:key:ctrl-r", function( editor ) -- remove cursors from the end of a line
+	editor.map( editor.remove, editor.filters.eofline ).resetCursorBlink()
 end )
 
 WaveLite.event.bind( "editor:key:ctrl-d", function( editor ) -- deselect all cursors
@@ -87,6 +90,7 @@ end )
 WaveLite.event.bind( "editor:key:ctrl-a", function( editor ) -- select all text
 	editor
 		.map( editor.remove, editor.filters.negate( editor.filters.first() ) )
+		.map( editor.deselect )
 		.map( editor.cursor_home, nil, { full = true } )
 		.map( editor.cursor_end, nil, { full = true, select = true } )
 end )

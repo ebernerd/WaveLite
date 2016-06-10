@@ -7,6 +7,8 @@ local WaveLite = require "src.WaveLite"
 -- options = require "src.options"
 -- packages = require "src.packages"
 
+local isMobile = love.system.getOS() == "Android" or love.system.getOS() == "iOS" or true
+
 function love.load()
 	love.keyboard.setKeyRepeat( true )
 	WaveLite.load()
@@ -49,7 +51,7 @@ function love.wheelmoved( x, y )
 	UIPanel.main:onWheelMoved( x, y )
 end
 
-if love.system.getOS() ~= "Android" and love.system.getOS() ~= "iOS" then
+if isMobile then
 	function love.mousepressed(x, y, button)
 		return love.touchpressed(button, x, y)
 	end
