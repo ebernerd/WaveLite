@@ -5,6 +5,7 @@ local libstyle = require "src.style"
 local rendering = require "src.lib.rendering"
 local newTabManagerAPI = require "src.lib.apis.tabmanager"
 local tween = require "src.lib.tween"
+local util = require "src.lib.util"
 
 local TABPADDING = 5
 local TRANSITION_TIME = 0.3
@@ -77,13 +78,28 @@ local function newTabManager()
 					totalwidth = totalwidth + tabs.tabwidths[i]
 
 					if totalwidth > x then
-						tabs:switchTo( tabs.editors[i] )
+						if tabs.editors[i] then
+							tabs:switchTo( tabs.editors[i] )
+						end
+
 						break
 					end
 				end
 			end
 
 			tabs.touch = false
+		end
+	end
+
+	function tabs.display:onDraw( stage )
+		if stage == "before" then
+			rendering.tabs( tabs )
+		end
+	end
+
+	function tabs.display:onKeypress( key )
+		if key == "t" and util.isCtrlHeld() and not util.isShiftHeld() and not util.isAltHeld() then
+			tabs.api.open "blank" .focus()
 		end
 	end
 
@@ -104,6 +120,16 @@ local function newTabManager()
 		for i = #self.editors, 1, -1 do
 			if self.editors[i] == editor then
 				table.remove( self.editors, i )
+
+				if i == self.toIndex then
+					if self.editors[i] then
+						self:switchTo( self.editors[i] )
+					elseif self.editors[i - 1] then
+						self:switchTo( self.editors[i - 1] )
+					else
+						tabs.display:focus()
+					end
+				end
 			end
 		end
 
@@ -146,12 +172,6 @@ local function newTabManager()
 				self.editors[i]:resize( self.width, self.height - tabs.display.height )
 				self.editors[i]:onParentResized( self )
 			end
-		end
-	end
-
-	function tabs.display:onDraw( stage )
-		if stage == "before" then
-			rendering.tabs( tabs )
 		end
 	end
 

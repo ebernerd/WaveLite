@@ -3,6 +3,7 @@ local libtext_editor = require "src.lib.text_editor"
 local libcursor = require "src.lib.cursor"
 local libstyle = require "src.style"
 local libresource = require "src.lib.resource"
+local libevent = require "src.lib.event"
 local util = require "src.lib.util"
 local libformatting = require "src.lib.formatting"
 
@@ -16,6 +17,7 @@ local function newEditorAPI( editor )
 	local public = util.protected_table( api )
 	local isMapping = false
 	local shouldMerge = true
+	local closing = false
 
 	local function tryMerge()
 		if isMapping then
@@ -36,6 +38,20 @@ local function newEditorAPI( editor )
 		editor.parent:switchTo( editor )
 
 		return public
+	end
+
+	function api.close()
+		closing = true
+		libevent.invoke( "editor:close", editor )
+
+		if closing then
+			editor.parent:removeEditor( editor )
+			closing = false
+		end
+	end
+
+	function api.cancel_close()
+		closing = false
 	end
 
 	function api.resetCursorBlink()
@@ -97,7 +113,11 @@ local function newEditorAPI( editor )
 			if min[2] == max[2] then
 				return editor.lines[min[2]]:sub( min[3], max[3] - 1 )
 			else
-				return editor.lines[min[2]]:sub( min[3] ) .. "\n" .. table.concat( editor.lines, "\n", min[2] + 1, max[2] - 1 ) .. (max[2] > min[1] + 1 and "\n" or "") .. editor.lines[max[2]]:sub( 1, max[3] - 1 )
+				return editor.lines[min[2]]:sub( min[3] )
+					.. "\n"
+					.. table.concat( editor.lines, "\n", min[2] + 1, max[2] - 1 )
+					.. (max[2] > min[2] + 1 and "\n" or "")
+					.. editor.lines[max[2]]:sub( 1, max[3] - 1 )
 			end
 		elseif copyLine then
 			return editor.lines[cursor.position[2]]
@@ -432,6 +452,30 @@ local function newEditorAPI( editor )
 	function filters.negate( f )
 		return function( ... )
 			return not f( ... )
+		end
+	end
+
+	function filters.union( ... )
+		local t = { ... }
+		return #t == 1 and t[1] or #t == 2 and function( ... ) return t[1]( ... ) or t[2]( ... ) end or function( ... )
+			for i = 1, #t do
+				if t[i]( ... ) then
+					return true
+				end
+			end
+			return false
+		end
+	end
+
+	function filters.intersection( ... )
+		local t = { ... }
+		return #t == 1 and t[1] or #t == 2 and function( ... ) return t[1]( ... ) and t[2]( ... ) end or function( ... )
+			for i = 1, #t do
+				if not t[i]( ... ) then
+					return false
+				end
+			end
+			return true
 		end
 	end
 

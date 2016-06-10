@@ -65,6 +65,13 @@ local function newUIPanel( x, y, width, height )
 		end
 	end
 
+	function panel:unfocus()
+		if focussed == self then
+			focussed:onUnFocus()
+			focussed = nil
+		end
+	end
+
 	function panel:draw( x, y )
 		x, y = x or 0, y or 0
 

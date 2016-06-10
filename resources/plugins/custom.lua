@@ -50,8 +50,28 @@ WaveLite.event.bind( "editor:key:ctrl-shift-i", function(editor)
 end )
 
 WaveLite.event.bind( "editor:key:ctrl-t", function(editor)
-	local new_editor = editor.tabs().open( "content", "\n -- This is awesome!\n" )
+	local title = ""
+	local content = {}
+	local i = 0
+
+	editor.map( function( cursor )
+		local text = editor.read( cursor )
+
+		i = i + 1
+
+		if i == 1 then
+			title = text
+		else
+			content[#content + 1] = text
+		end
+	end )
+
+	local new_editor = editor.tabs().open( "content", table.concat( content, "\n" ), title )
 
 	new_editor.focus()
 	new_editor.setLanguage( editor.language() )
+end )
+
+WaveLite.event.bind( "editor:key:ctrl-w", function(editor)
+	editor.close()
 end )
