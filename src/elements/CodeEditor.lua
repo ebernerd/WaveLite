@@ -79,10 +79,11 @@ local function rescrollY( editor )
 		)
 end
 
-local function newCodeEditor( title, content )
+local function newCodeEditor( mode, title, content )
 
 	local editor = UIPanel.new()
 
+	editor.mode = mode
 	editor.title = title or "untitled"
 	editor.style = libresource.load( "style", "core:light" )
 	editor.lines = util.splitlines( content or "" )

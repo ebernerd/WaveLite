@@ -162,6 +162,8 @@ local function newUIPanel( x, y, width, height )
 			self.children[i]:handle( isTouchEvent and event:child( self.children[i].x, self.children[i].y ) or event )
 		end
 
+		if not self.visible then return end
+
 		if not event.handled and event.type == "touch" and self.enable_mouse and event:isWithin( self.width, self.height ) then
 			self.touches[event.ID] = { x = event.x, y = event.y, time = os.clock(), moved = false }
 			self:focus()

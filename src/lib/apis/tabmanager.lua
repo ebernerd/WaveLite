@@ -13,7 +13,7 @@ local function newTabManagerAPI(tabs)
 				return error( "expected string content, got " .. type( data ) )
 			end
 
-			return tabs:addEditor( editor( data ) )
+			return tabs:addEditor( editor( "content", data ) )
 
 		elseif tabtype == "file" then
 			if type( data ) ~= "string" then
@@ -24,7 +24,7 @@ local function newTabManagerAPI(tabs)
 				return false, "no such file '" .. data .. "'"
 			end
 
-			return tabs:addEditor( editor( data:gsub( "^.*/", "" ), love.filesystem.read( data ) ) )
+			return tabs:addEditor( editor( "file", data:gsub( "^.*/", "" ), love.filesystem.read( data ) ) )
 
 		elseif tabtype == "content" then
 			if type( data ) ~= "string" then
@@ -34,7 +34,13 @@ local function newTabManagerAPI(tabs)
 				return error( "expected string name, got " .. type( data2 ) )
 			end
 
-			return tabs:addEditor( editor( data2, data ) )
+			return tabs:addEditor( editor( "content", data2, data ) )
+
+		elseif tabtype == "canvas" then
+			
+
+		elseif tabtype == "console" then
+
 
 		end
 	end

@@ -83,6 +83,14 @@ local function newEditorAPI( editor )
 		return editor.stylename
 	end
 
+	function api.title()
+		return editor.title
+	end
+
+	function api.mode()
+		return editor.mode
+	end
+
 	function api.write( cursor, text )
 		libtext_editor.write( editor.lines, editor.formatting, editor.cursors, cursor, text )
 		editor.cursorblink = 0

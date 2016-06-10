@@ -28,6 +28,8 @@ local function newMouseEvent( t )
 	function t:child( x, y )
 		local sub = newMouseEvent( newEvent( setmetatable( { x = self.x - x, y = self.y - y }, { __index = self } ) ) )
 
+		sub.handled = self.handled
+
 		function sub.handle()
 			sub.handled = true
 			self:handle()
