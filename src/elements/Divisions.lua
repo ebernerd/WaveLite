@@ -5,6 +5,7 @@ local function newDivisions( direction, ... )
 
 	local div = UIPanel.new( ... )
 
+	div.type = "division"
 	div.direction = direction or "vertical"
 	div.divider_bound = 0
 
@@ -111,7 +112,7 @@ local function newDivisions( direction, ... )
 			self.touches[event.ID].moved = self.touches[event.ID].moved or dx * dx + dy * dy >= 16
 			
 			if self.divider_bound and self.children[self.divider_bound] and self.children[self.divider_bound + 1] then
-				local diff = self.direction == "vertical" and event.y - self.touches[ID].y or event.x - self.touches[event.ID].x
+				local diff = self.direction == "vertical" and event.y - self.touches[event.ID].y or event.x - self.touches[event.ID].x
 
 				if self.direction == "vertical" then
 					self.children[self.divider_bound + 1]:resize( self.children[self.divider_bound + 1].width, self.child_two_size - diff )

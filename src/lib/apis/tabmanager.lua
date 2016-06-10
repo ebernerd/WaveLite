@@ -1,8 +1,10 @@
 
 local util = require "src.lib.util"
 local editor = require "src.elements.CodeEditor"
+local divisions = require "src.elements.Divisions"
 
 local function newTabManagerAPI(tabs)
+	local tabmanager = require "src.elements.TabManager"
 
 	local api = {}
 	local public = util.protected_table(api)
@@ -38,6 +40,102 @@ local function newTabManagerAPI(tabs)
 		else
 			return error( "unknown tab type '" .. tostring( tabtype ) .. "'" )
 
+		end
+	end
+
+	function api.split_up( ... )
+		local mode = "vertical"
+		local p = tabs.parent
+		local new = tabmanager()
+
+		if p.direction == mode then
+			p:add( new, tabs )
+
+		else
+			local div = divisions( mode )
+
+			p:replaceChild( tabs, div )
+
+			div:add( new )
+			div:add( tabs )
+		end
+		
+		return new.api
+	end
+
+	function api.split_down( ... )
+		local mode = "vertical"
+		local p = tabs.parent
+		local new = tabmanager()
+
+		if p.direction == mode then
+			p:add( new, p:nextChild( tabs ) )
+
+		else
+			local div = divisions( mode )
+
+			p:replaceChild( tabs, div )
+
+			div:add( tabs )
+			div:add( new )
+		end
+		
+		return new.api
+	end
+
+	function api.split_left( ... )
+		local mode = "horizontal"
+		local p = tabs.parent
+		local new = tabmanager()
+
+		if p.direction == mode then
+			p:add( new, tabs )
+
+		else
+			local div = divisions( mode )
+
+			p:replaceChild( tabs, div )
+
+			div:add( new )
+			div:add( tabs )
+		end
+		
+		return new.api
+	end
+
+	function api.split_right( ... )
+		local mode = "horizontal"
+		local p = tabs.parent
+		local new = tabmanager()
+
+		if p.direction == mode then
+			p:add( new, p:nextChild( tabs ) )
+
+		else
+			local div = divisions( mode )
+
+			p:replaceChild( tabs, div )
+
+			div:add( tabs )
+			div:add( new )
+		end
+		
+		return new.api
+	end
+
+	function api.after( editor )
+		for i = 1, #tabs.editors do
+			if tabs.editors[i].api == editor then
+				return tabs.editors[i == #tabs.editors and 1 or i + 1].api
+			end
+		end
+	end
+
+	function api.before( editor )
+		for i = 1, #tabs.editors do
+			if tabs.editors[i].api == editor then
+				return tabs.editors[i == 1 and #tabs.editors or i - 1].api
+			end
 		end
 	end
 

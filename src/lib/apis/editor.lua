@@ -457,6 +457,12 @@ local function newEditorAPI( editor )
 		end
 	end
 
+	function filters.has_selection()
+		return function( cursor )
+			return cursor.selection ~= false
+		end
+	end
+
 	function filters.negate( f )
 		return function( ... )
 			return not f( ... )

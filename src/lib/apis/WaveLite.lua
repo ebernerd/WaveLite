@@ -61,7 +61,7 @@ return function( plugin_name )
 		return resource.unregister( rtype, plugin_name .. ":" .. name )
 	end
 
-	function api.resource.load( name )
+	function api.resource.load( rtype, name )
 		if type( rtype ) ~= "string" then return error( "expected string type, got " .. type( rtype ) ) end
 		if type(  name ) ~= "string" then return error( "expected string name, got " .. type(  name ) ) end
 

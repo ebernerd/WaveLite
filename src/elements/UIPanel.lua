@@ -16,6 +16,7 @@ local function newUIPanel( x, y, width, height )
 
 	local panel = {}
 
+	panel.type = "panel"
 	panel.x = x or 0
 	panel.y = y or 0
 	panel.width = width or 1
@@ -41,6 +42,62 @@ local function newUIPanel( x, y, width, height )
 				child.parent = nil
 				table.remove( self.children, i )
 				return child
+			end
+		end
+	end
+
+	function panel:replaceChild( child, new )
+		for i = 1, #self.children do
+			if self.children[i] == child then
+				new.x = child.x
+				new.y = child.y
+				new.width = child.width
+				new.height = child.height
+
+				self.children[i] = new
+				self.children[i].parent = nil
+
+				new.parent = self
+
+				return child
+			end
+		end
+
+		return new
+	end
+
+	function panel:nextChild( child, loop )
+		for i = 1, #self.children do
+			if self.children[i] == child then
+				if i == #self.children then
+					return loop and self.children[1] or nil
+				else
+					return self.children[i + 1]
+				end
+			end
+		end
+	end
+
+	function panel:previousChild( child, loop )
+		for i = 1, #self.children do
+			if self.children[i] == child then
+				if i == 1 then
+					return loop and self.children[#self.children] or nil
+				else
+					return self.children[i - 1]
+				end
+			end
+		end
+	end
+
+	function panel:childOfType( type )
+		if self.type == type then
+			return self
+		end
+		for i = #self.children, 1, -1 do
+			local c = self.children[i]:childOfType( type )
+			if c then
+				return c
 			end
 		end
 	end

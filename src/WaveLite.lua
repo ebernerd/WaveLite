@@ -19,10 +19,10 @@ function WaveLite.load()
 	local editor = tabs.api.open "content" .focus()
 
 	split.x = 200
-	split.y = 100
+	split.y = 0
 
 	function split:onParentResized()
-		self:resize( self.parent.width - self.x - 10, self.parent.height - self.y - 10 )
+		self:resize( self.parent.width - self.x, self.parent.height - self.y )
 	end
 
 	UIPanel.main:add( split )

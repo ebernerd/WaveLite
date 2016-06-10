@@ -75,18 +75,6 @@ WaveLite.event.bind( "editor:key:ctrl-v", function( editor )
 	editor.map( editor.write, nil, system.paste() )
 end )
 
-WaveLite.event.bind( "editor:key:ctrl-r", function( editor ) -- remove cursors from the end of a line
-	editor.map( editor.remove, editor.filters.eofline ).resetCursorBlink()
-end )
-
-WaveLite.event.bind( "editor:key:ctrl-d", function( editor ) -- deselect all cursors
-	editor.map( editor.deselect )
-end )
-
-WaveLite.event.bind( "editor:key:ctrl-l", function( editor ) -- select the line of each cursor
-	editor.map( editor.select_line )
-end )
-
 WaveLite.event.bind( "editor:key:ctrl-a", function( editor ) -- select all text
 	editor
 		.map( editor.remove, editor.filters.negate( editor.filters.first() ) )
@@ -221,4 +209,12 @@ end )
 
 WaveLite.event.bind( "editor:text", function( editor, text )
 	editor.map( editor.write, nil, text )
+end )
+
+WaveLite.event.bind( "editor:key:ctrl-tab", function( editor )
+	editor.tabs().after(editor).focus()
+end )
+
+WaveLite.event.bind( "editor:key:ctrl-shift-tab", function( editor )
+	editor.tabs().before(editor).focus()
 end )

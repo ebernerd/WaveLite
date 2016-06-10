@@ -83,6 +83,7 @@ local function newCodeEditor( mode, title, content )
 
 	local editor = UIPanel.new()
 
+	editor.type = "editor"
 	editor.mode = mode
 	editor.title = title or "untitled"
 	editor.style = libresource.load( "style", "core:light" )

@@ -2,23 +2,51 @@
 local light_theme = true
 local language = 0
 
-WaveLite.event.bind( "editor:key:ctrl-tab #style=core:light", function(editor)
+WaveLite.event.bind( "editor:key:ctrl-kp8", function( editor ) -- remove cursors from the end of a line
+	editor.tabs().split_up().open "content" .focus()
+end )
+
+WaveLite.event.bind( "editor:key:ctrl-kp2", function( editor ) -- remove cursors from the end of a line
+	editor.tabs().split_down().open "content" .focus()
+end )
+
+WaveLite.event.bind( "editor:key:ctrl-kp4", function( editor ) -- remove cursors from the end of a line
+	editor.tabs().split_left().open "content" .focus()
+end )
+
+WaveLite.event.bind( "editor:key:ctrl-kp6", function( editor ) -- remove cursors from the end of a line
+	editor.tabs().split_right().open "content" .focus()
+end )
+
+WaveLite.event.bind( "editor:key:ctrl-r", function( editor ) -- remove cursors from the end of a line
+	editor.map( editor.remove, editor.filters.eofline ).resetCursorBlink()
+end )
+
+WaveLite.event.bind( "editor:key:ctrl-d", function( editor ) -- deselect all cursors
+	editor.map( editor.deselect )
+end )
+
+WaveLite.event.bind( "editor:key:ctrl-shift-l", function( editor ) -- select the line of each cursor
+	editor.map( editor.select_line )
+end )
+
+WaveLite.event.bind( "editor:key:alt-s #style=core:light", function(editor)
 	editor.setStyle "core:dark"
 end )
 
-WaveLite.event.bind( "editor:key:ctrl-tab #style=core:dark", function(editor)
+WaveLite.event.bind( "editor:key:alt-s #style=core:dark", function(editor)
 	editor.setStyle "core:light"
 end )
 
-WaveLite.event.bind( "editor:key:ctrl-f #language=core:lua", function(editor)
+WaveLite.event.bind( "editor:key:ctrl-l #language=core:lua", function(editor)
 	editor.setLanguage "core:plain text"
 end )
 
-WaveLite.event.bind( "editor:key:ctrl-f #language=core:flux", function(editor)
+WaveLite.event.bind( "editor:key:ctrl-l #language=core:flux", function(editor)
 	editor.setLanguage "core:lua"
 end )
 
-WaveLite.event.bind( "editor:key:ctrl-f #language=core:plain text", function(editor)
+WaveLite.event.bind( "editor:key:ctrl-l #language=core:plain text", function(editor)
 	editor.setLanguage "core:flux"
 end )
 

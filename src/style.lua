@@ -83,7 +83,7 @@ local template = {
 			["editor:Cursor.Foreground"] = rgb( 0x303030 );
 			["editor:Cursor.FullCharWidth"] = false;
 
-		["editor:Font"] = love.graphics.newFont( "resources/fonts/Inconsolata/Inconsolata.otf", 18 );
+		["editor:Font"] = love.graphics.newFont( "resources/fonts/Inconsolata/Inconsolata.otf", 16 );
 
 	["Tabs"] = nil;
 		["Tabs:Background"] = rgb( 0xf0f0f0 );
@@ -92,7 +92,7 @@ local template = {
 		["Tabs:Divider"] = { 0, 0, 0, 20 };
 		["Tabs:Selected"] = { 100, 180, 255 };
 		["Tabs:Expand"] = true;
-		["Tabs:Font"] = love.graphics.newFont( "resources/fonts/Exo.otf", 20 );
+		["Tabs:Font"] = love.graphics.newFont( "resources/fonts/Exo.otf", 17 );
 }
 
 local function get( value )

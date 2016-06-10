@@ -35,6 +35,7 @@ local function newTabManager()
 
 	local tabs = UIPanel.new()
 
+	tabs.type = "tabs"
 	tabs.scrollX = 0
 	tabs.api = newTabManagerAPI( tabs )
 	tabs.visibleTab = false
