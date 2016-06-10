@@ -14,24 +14,23 @@ function WaveLite.load()
 
 	-- global configs, settings, reference to main pane handler, etc
 
-	local tabs = require "src.elements.TabManager" ()
-	local editor = tabs.api.open( "blank", "thing" )
+	local split = require "src.elements.Divisions" "horizontal"
+	local tabs = split:add( require "src.elements.TabManager" () )
+	local editor = tabs.api.open "content" .focus()
 
-	for i = 1, 10 do
-		tabs.api.open( "content", "\n -- This is some stuff for tab " .. i .. "\n", "thing " .. i )
-	end
+	split.x = 200
+	split.y = 100
 
-	editor.focus()
-
-	tabs.x = 200
-	tabs.y = 100
-	tabs:resize( 600, 400 )
-
-	function tabs:onParentResized()
+	function split:onParentResized()
 		self:resize( self.parent.width - self.x - 10, self.parent.height - self.y - 10 )
 	end
 
-	UIPanel.main:add( tabs )
+	UIPanel.main:add( split )
+
+	require "src.lib.event" .bind( "editor:key:ctrl-shift-t", function()
+		local tabs = split:add( require "src.elements.TabManager" () )
+		tabs.api.open "content" .focus()
+	end )
 end
 
 return WaveLite

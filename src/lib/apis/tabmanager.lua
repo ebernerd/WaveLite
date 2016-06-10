@@ -8,14 +8,7 @@ local function newTabManagerAPI(tabs)
 	local public = util.protected_table(api)
 
 	function api.open( tabtype, data, data2 )
-		if tabtype == "blank" then
-			if data and type( data ) ~= "string" then
-				return error( "expected string content, got " .. type( data ) )
-			end
-
-			return tabs:addEditor( editor( "content", data ) )
-
-		elseif tabtype == "file" then
+		if tabtype == "file" then
 			if type( data ) ~= "string" then
 				return error( "expected string filename, got " .. type( data ) )
 			end
@@ -27,7 +20,7 @@ local function newTabManagerAPI(tabs)
 			return tabs:addEditor( editor( "file", data:gsub( "^.*/", "" ), love.filesystem.read( data ) ) )
 
 		elseif tabtype == "content" then
-			if type( data ) ~= "string" then
+			if data and type( data ) ~= "string" then
 				return error( "expected string content, got " .. type( data ) )
 			end
 			if data2 and type( data2 ) ~= "string" then
@@ -37,10 +30,13 @@ local function newTabManagerAPI(tabs)
 			return tabs:addEditor( editor( "content", data2, data ) )
 
 		elseif tabtype == "canvas" then
-			
+
 
 		elseif tabtype == "console" then
 
+
+		else
+			return error( "unknown tab type '" .. tostring( tabtype ) .. "'" )
 
 		end
 	end

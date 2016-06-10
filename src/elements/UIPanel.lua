@@ -18,8 +18,8 @@ local function newUIPanel( x, y, width, height )
 
 	panel.x = x or 0
 	panel.y = y or 0
-	panel.width = width or 0
-	panel.height = height or 0
+	panel.width = width or 1
+	panel.height = height or 1
 	panel.parent = nil
 	panel.children = {}
 	panel.visible = true
@@ -207,14 +207,14 @@ local function newUIPanel( x, y, width, height )
 
 end
 
-local main = newUIPanel( 0, 0, 0, 0 )
+local main = newUIPanel()
 
 function main:onUpdate()
 	self:resize( love.window.getMode() )
 end
 
-local body = main:add( newUIPanel( 0, 0, 0, 0 ) )
-local popup = main:add( newUIPanel( 0, 0, 0, 0 ) )
+local body = main:add( newUIPanel() )
+local popup = main:add( newUIPanel() )
 
 function body:onDraw() end
 function popup:onDraw() end

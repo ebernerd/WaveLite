@@ -46,6 +46,8 @@ local function newTabManager()
 	tabs.selected_left_tween = nil
 	tabs.selected_size_tween = nil
 	tabs.toIndex = 0
+	tabs.display.enable_keyboard = true
+	tabs.enable_keyboard = true
 
 	function tabs.display:onTouch( x )
 		self.mount = tabs.scrollX + x
@@ -94,7 +96,7 @@ local function newTabManager()
 
 	function tabs.display:onKeypress( key )
 		if key == "t" and util.isCtrlHeld() and not util.isShiftHeld() and not util.isAltHeld() then
-			tabs.api.open "blank" .focus()
+			tabs.api.open "content" .focus()
 		end
 	end
 
@@ -121,14 +123,16 @@ local function newTabManager()
 						self:switchTo( self.editors[i] )
 					elseif self.editors[i - 1] then
 						self:switchTo( self.editors[i - 1] )
-					else
-						tabs.display:focus()
 					end
 				end
 			end
 		end
 
 		recalcwidths( self )
+
+		if #self.editors == 0 then
+			self.parent:remove( self )
+		end
 
 		return self:remove( editor )
 	end
@@ -212,6 +216,12 @@ local function newTabManager()
 			elseif tabs.selected_left + tabs.selected_size > tabs.scrollX + tabs.width then
 				tabs.scrollX = tabs.selected_left + tabs.selected_size - tabs.width
 			end
+		end
+	end
+
+	function tabs:onKeypress( key )
+		if key == "t" and util.isCtrlHeld() and not util.isShiftHeld() and not util.isAltHeld() then
+			tabs.api.open "content" .focus()
 		end
 	end
 

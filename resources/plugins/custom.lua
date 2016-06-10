@@ -50,7 +50,7 @@ WaveLite.event.bind( "editor:key:ctrl-shift-i", function(editor)
 end )
 
 WaveLite.event.bind( "editor:key:ctrl-t", function(editor)
-	local title = ""
+	local title = "untitled"
 	local content = {}
 	local i = 0
 
