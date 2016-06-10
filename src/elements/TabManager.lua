@@ -46,31 +46,28 @@ local function newTabManager()
 	tabs.selected_left_tween = nil
 	tabs.selected_size_tween = nil
 	tabs.toIndex = 0
-	tabs.touch = false
 
-	function tabs.display:onTouch( x, y, button )
-		tabs.touch = { x = x + tabs.scrollX, y = y, button = button, moved = false }
+	function tabs.display:onTouch( x )
+		self.mount = tabs.scrollX + x
 	end
 
 	function tabs.display:onMove( x, y, button )
-		if tabs.touch then
-			local diff = tabs.touch.x - x - tabs.scrollX
+		if self.touches[button] then
 			local totalwidth = 0
 
 			for i = 1, #tabs.tabwidths do
 				totalwidth = totalwidth + tabs.tabwidths[i]
 			end
 
-			if tabs.touch.moved or math.abs( diff ) > 4 then
-				tabs.touch.moved = true
-				tabs.scrollX = math.max( 0, math.min( tabs.scrollX + diff, totalwidth - self.width ) )
+			if self.touches[button].moved then
+				tabs.scrollX = math.max( 0, math.min( self.mount - x, totalwidth - self.width ) )
 			end
 		end
 	end
 
 	function tabs.display:onRelease( x, y, button )
-		if tabs.touch then
-			if not tabs.touch.moved then
+		if self.touches[button] then
+			if not self.touches[button].moved then
 				local totalwidth = 0
 				local x = x + tabs.scrollX
 
@@ -86,8 +83,6 @@ local function newTabManager()
 					end
 				end
 			end
-
-			tabs.touch = false
 		end
 	end
 
@@ -211,10 +206,12 @@ local function newTabManager()
 			end
 		end
 
-		if tabs.selected_left < tabs.scrollX then
-			tabs.scrollX = tabs.selected_left
-		elseif tabs.selected_left + tabs.selected_size > tabs.scrollX + tabs.width then
-			tabs.scrollX = tabs.selected_left + tabs.selected_size - tabs.width
+		if tabs.selected_left_tween or tabs.selected_size_tween then
+			if tabs.selected_left < tabs.scrollX then
+				tabs.scrollX = tabs.selected_left
+			elseif tabs.selected_left + tabs.selected_size > tabs.scrollX + tabs.width then
+				tabs.scrollX = tabs.selected_left + tabs.selected_size - tabs.width
+			end
 		end
 	end
 

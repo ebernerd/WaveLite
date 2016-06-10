@@ -91,7 +91,6 @@ local function newCodeEditor( title, content )
 		states = { [0] = {} };
 		formatter = function( line ) return util.formatText( line ) end;
 	}
-	editor.focussed = false
 	editor.enable_keyboard = true
 	editor.scrollX = 0
 	editor.scrollY = 0
@@ -234,11 +233,13 @@ local function newCodeEditor( title, content )
 	end
 
 	function editor:onFocus()
-		self.focussed = true
+		if not love.keyboard.hasTextInput() then
+			love.keyboard.setTextInput( true )
+		end
 	end
 
 	function editor:onUnFocus()
-		self.focussed = false
+		love.keyboard.setTextInput( false )
 	end
 
 	function editor:onTouch( x, y, button )

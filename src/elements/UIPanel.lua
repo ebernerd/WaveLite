@@ -12,17 +12,6 @@ local function globalY( child )
 	return child.y + ( child.parent and globalY( child.parent ) or 0 )
 end
 
-local function findRecursive( x, y, children )
-	for i = #children, 1, -1 do
-		if children[i].visible and x >= children[i].x and y >= children[i].y and x < children[i].x + children[i].width and y < children[i].y + children[i].height then
-			local child = findRecursive( x - children[i].x, y - children[i].y, children[i].children ) or children[i].enable_mouse and children[i]
-			if child then
-				return child
-			end
-		end
-	end
-end
-
 local function newUIPanel( x, y, width, height )
 
 	local panel = {}
@@ -36,7 +25,8 @@ local function newUIPanel( x, y, width, height )
 	panel.visible = true
 	panel.enable_keyboard = false
 	panel.enable_mouse = true
-
+	panel.touches = {}
+	panel.focussed = false
 	panel.colour = { 250, 250, 250 }
 
 	function panel:add( child )
@@ -59,9 +49,11 @@ local function newUIPanel( x, y, width, height )
 		if focussed ~= self then
 			if focussed then
 				focussed:onUnFocus( self )
+				focussed.focussed = false
 			end
 			self:onFocus( focussed )
 			focussed = self
+			self.focussed = true
 		end
 	end
 
@@ -69,6 +61,7 @@ local function newUIPanel( x, y, width, height )
 		if focussed == self then
 			focussed:onUnFocus()
 			focussed = nil
+			self.focussed = false
 		end
 	end
 
@@ -158,6 +151,56 @@ local function newUIPanel( x, y, width, height )
 
 	end
 
+	function panel:handle( event )
+		if self.handleprev then
+			self:handleprev( event )
+		end
+
+		local isTouchEvent = event.type == "touch" or event.type == "move" or event.type == "release" or event.type == "wheel" or event.type == "ping"
+
+		for i = #self.children, 1, -1 do
+			self.children[i]:handle( isTouchEvent and event:child( self.children[i].x, self.children[i].y ) or event )
+		end
+
+		if not event.handled and event.type == "touch" and self.enable_mouse and event:isWithin( self.width, self.height ) then
+			self.touches[event.ID] = { x = event.x, y = event.y, time = os.clock(), moved = false }
+			self:focus()
+			self:onTouch( event.x, event.y, event.ID )
+			event:handle()
+
+		elseif event.type == "move" and self.enable_mouse and self.touches[event.ID] then
+			local dx, dy = event.x - self.touches[event.ID].x, event.y - self.touches[event.ID].y
+			self.touches[event.ID].moved = self.touches[event.ID].moved or dx * dx + dy * dy >= 16
+			self:onMove( event.x, event.y, event.ID )
+			event:handle()
+
+		elseif event.type == "release" and self.enable_mouse and self.touches[event.ID] then
+			self:onRelease( event.x, event.y, event.ID )
+			self.touches[event.ID] = nil
+			event:handle()
+
+		elseif not event.handled and event.type == "wheel" and self.enable_mouse and event:isWithin( self.width, self.height ) then
+			self:onWheelMoved( event.xd, event.yd )
+			event:handle()
+
+		elseif event.type == "ping" and self.enable_mouse then
+			event:handle()
+
+		elseif not event.handled and self.focussed and event.type == "keypress" and self.enable_keyboard then
+			self:onKeypress( event.key )
+			event:handle()
+
+		elseif not event.handled and self.focussed and event.type == "keyrelease" and self.enable_keyboard then
+			self:onKeyrelease( event.key )
+			event:handle()
+
+		elseif not event.handled and self.focussed and event.type == "textinput" and self.enable_keyboard then
+			self:onTextInput( event.text )
+			event:handle()
+
+		end
+	end
+
 	return panel
 
 end
@@ -168,59 +211,8 @@ function main:onUpdate()
 	self:resize( love.window.getMode() )
 end
 
-function main:onWheelMoved( x, y )
-	if focussed then
-		focussed:onWheelMoved( x, y )
-	end
-end
-
-function main:onTouch( x, y, ID )
-	local child = findRecursive( x, y, self.children )
-
-	if child then
-		child:onTouch( x - globalX(child), y - globalY(child), ID )
-		touches[#touches + 1] = { child, ID }
-	end
-end
-
-function main:onRelease( x, y, ID )
-	for i = #touches, 1, -1 do
-		if touches[i][2] == ID then
-			touches[i][1]:onRelease( x - globalX(touches[i][1]), y - globalY(touches[i][1]), touches[i][2] )
-		end
-		table.remove( touches, i )
-	end
-end
-
-function main:onMove( x, y )
-	for i = 1, #touches do
-		touches[i][1]:onMove( x - globalX(touches[i][1]), y - globalY(touches[i][1]), touches[i][2] )
-	end
-end
-
-function main:onKeypress( key )
-	if focussed then
-		focussed:onKeypress( key )
-	end
-end
-
-function main:onKeyrelease( key )
-	if focussed then
-		focussed:onKeyrelease( key )
-	end
-end
-
-function main:onTextInput( key )
-	if focussed then
-		focussed:onTextInput( key )
-	end
-end
-
 local body = main:add( newUIPanel( 0, 0, 0, 0 ) )
 local popup = main:add( newUIPanel( 0, 0, 0, 0 ) )
-
-body.enable_mouse = false
-popup.enable_mouse = false
 
 function body:onDraw() end
 function popup:onDraw() end

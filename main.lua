@@ -7,7 +7,37 @@ local WaveLite = require "src.WaveLite"
 -- options = require "src.options"
 -- packages = require "src.packages"
 
-local isMobile = love.system.getOS() == "Android" or love.system.getOS() == "iOS" or true
+local isMobile = love.system.getOS() == "Android" or love.system.getOS() == "iOS"
+local down = {}
+
+local function newEvent( t )
+	t.handled = false
+
+	function t:handle()
+		self.handled = true
+	end
+
+	return t
+end
+
+local function newMouseEvent( t )
+	function t:isWithin( width, height )
+		return self.x >= 0 and self.y >= 0 and self.x < width and self.y < height
+	end
+
+	function t:child( x, y )
+		local sub = newMouseEvent( newEvent( setmetatable( { x = self.x - x, y = self.y - y }, { __index = self } ) ) )
+
+		function sub.handle()
+			sub.handled = true
+			self:handle()
+		end
+
+		return sub
+	end
+
+	return t
+end
 
 function love.load()
 	love.keyboard.setKeyRepeat( true )
@@ -20,47 +50,51 @@ function love.update(dt)
 end
 
 function love.touchpressed(ID, x, y)
-	UIPanel.main:onTouch(x, y, ID)
+	UIPanel.main:handle( newMouseEvent( newEvent { type = "touch", x = x, y = y, ID = ID } ) )
 end
 
 function love.touchreleased(ID, x, y)
-	UIPanel.main:onRelease(x, y, ID)
+	UIPanel.main:handle( newMouseEvent( newEvent { type = "release", x = x, y = y, ID = ID } ) )
 end
 
 function love.touchmoved(ID, x, y)
-	UIPanel.main:onMove(x, y)
+	UIPanel.main:handle( newMouseEvent( newEvent { type = "move", x = x, y = y, ID = ID } ) )
+end
+
+function love.wheelmoved( x, y )
+	UIPanel.main:handle( newMouseEvent( newEvent { type = "wheel", x = love.mouse.getX(), y = love.mouse.getY(), xd = x, yd = y } ) )
 end
 
 function love.keypressed(key)
-	UIPanel.main:onKeypress(key)
+	UIPanel.main:handle( newEvent { type = "keypress", key = key } )
 end
 
 function love.keyreleased(key)
-	UIPanel.main:onKeyrelease(key)
+	UIPanel.main:handle( newEvent { type = "keyrelease", key = key } )
 end
 
 function love.textinput(text)
-	UIPanel.main:onTextInput(text)
+	UIPanel.main:handle( newEvent { type = "textinput", text = text } )
 end
 
 function love.draw()
 	UIPanel.main:draw()
 end
 
-function love.wheelmoved( x, y )
-	UIPanel.main:onWheelMoved( x, y )
-end
-
-if isMobile then
+if not isMobile then
 	function love.mousepressed(x, y, button)
+		down[button] = true
 		return love.touchpressed(button, x, y)
 	end
 
 	function love.mousereleased(x, y, button)
+		down[button] = nil
 		return love.touchreleased(button, x, y)
 	end
 
 	function love.mousemoved(x, y)
-		return love.touchmoved(_, x, y)
+		for v in pairs( down ) do
+			love.touchmoved(v, x, y)
+		end
 	end
 end
