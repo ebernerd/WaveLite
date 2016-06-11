@@ -1,7 +1,10 @@
 
+local WaveLite = require "src.WaveLite"
 local util = require "src.lib.util"
 local resource = require "src.lib.resource"
 local event = require "src.lib.event"
+local CodeEditor = require "src.elements.CodeEditor"
+local TabManager = require "src.elements.TabManager"
 
 --[[
 	WaveLite.*
@@ -66,6 +69,38 @@ return function( plugin_name )
 		if type(  name ) ~= "string" then return error( "expected string name, got " .. type(  name ) ) end
 
 		return resource.load( rtype, name )
+	end
+
+	function api.split_editor( editor, dir, ... )
+		for i = 1, #WaveLite.editors do
+			if WaveLite.editors[i].api == editor then
+				return WaveLite.splitEditor( WaveLite.editors[i], CodeEditor( ... ), dir ).api
+			end
+		end
+	end
+
+	function api.split_tabs( tabs, dir, ... )
+		for i = 1, #WaveLite.tab_managers do
+			if WaveLite.tab_managers[i].api == tabs then
+				return WaveLite.splitTab( WaveLite.tab_managers[i], TabManager(), dir ).api
+			end
+		end
+	end
+
+	function api.close_editor( editor )
+		for i = 1, #WaveLite.editors do
+			if WaveLite.editors[i].api == editor then
+				return WaveLite.closeEditor( WaveLite.editors[i] )
+			end
+		end
+	end
+
+	function api.close_tab( tabs )
+		for i = 1, #WaveLite.tab_managers do
+			if WaveLite.tab_managers[i].api == tabs then
+				return WaveLite.closeTab( WaveLite.tab_managers[i] )
+			end
+		end
 	end
 
 	return util.protected_table( api )

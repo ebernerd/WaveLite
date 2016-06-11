@@ -15,11 +15,41 @@ WaveLite.event.bind( "editor:touch", function(editor, position)
 	system.show_keyboard()
 end )
 
+WaveLite.event.bind( "editor:double-touch", function(editor, position)
+	if position[4] == 0 then
+		editor
+			.map( editor.remove, editor.filters.negate( editor.filters.first() ) )
+			.map( editor.deselect )
+			.map( editor.cursor_home, nil, { full = true } )
+			.map( editor.cursor_end, nil, { full = true, select = true } )
+	else
+		editor
+			.set_cursor( position )
+			.map( editor.cursor_expand )
+	end
+	system.show_keyboard()
+end )
+
 WaveLite.event.bind( "editor:ctrl-touch", function(editor, position)
 	if position[4] == 0 then
 		editor.new_cursor( position ).map( editor.select_line )
 	else
 		editor.new_cursor( position )
+	end
+	system.show_keyboard()
+end )
+
+WaveLite.event.bind( "editor:ctrl-double-touch", function(editor, position)
+	if position[4] == 0 then
+		editor
+			.map( editor.remove, editor.filters.negate( editor.filters.first() ) )
+			.map( editor.deselect )
+			.map( editor.cursor_home, nil, { full = true } )
+			.map( editor.cursor_end, nil, { full = true, select = true } )
+	else
+		editor
+			.new_cursor( position )
+			.map( editor.cursor_expand, editor.filters.last() )
 	end
 	system.show_keyboard()
 end )

@@ -26,6 +26,7 @@ function log:write( ... )
 
 	local text = table.concat( s, ", " )
 
+	print( "[" .. time() .. "]::\t" .. text )
 	love.filesystem.append( self.path, "[" .. time() .. "]::\t" .. text .. "\n" )
 end
 

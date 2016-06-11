@@ -140,6 +140,8 @@ local function newTabManager()
 	end
 
 	function tabs:addEditor( editor )
+		WaveLite.editors[#WaveLite.editors + 1] = editor
+
 		tabs.editors[#tabs.editors + 1] = editor
 
 		editor.y = tabs.display.height
@@ -148,6 +150,29 @@ local function newTabManager()
 		editor.visible = false
 
 		recalcwidths( self )
+
+		if #self.editors == 1 then
+			local w = 0
+
+			if self.visibleTab then
+				self.visibleTab.visible = false
+			end
+
+			editor.visible = true
+			self.visibleTab = editor
+
+			for i = 1, #self.editors do
+				if self.editors[i] == editor then
+					self.selected_size_tween = tween( self.selected_size, self.tabwidths[i], TRANSITION_TIME )
+					self.toIndex = i
+					break
+				else
+					w = w + self.tabwidths[i]
+				end
+			end
+
+			self.selected_left_tween = tween( self.selected_left, w, TRANSITION_TIME )
+		end
 
 		return self:add( editor ).api
 	end

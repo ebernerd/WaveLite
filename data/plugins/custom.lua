@@ -1,5 +1,25 @@
 
-WaveLite.event.bind( "editor:touch", function( editor, position )
+WaveLite.event.bind( "editor:key:ctrl-w", function( editor )
+	WaveLite.close_editor( editor )
+end )
+
+WaveLite.event.bind( "editor:key:ctrl-alt-kp6", function( editor )
+	WaveLite.split_editor( editor, "right", "content" )
+end )
+
+WaveLite.event.bind( "editor:key:ctrl-alt-kp4", function( editor )
+	WaveLite.split_editor( editor, "left", "content" )
+end )
+
+WaveLite.event.bind( "editor:key:ctrl-alt-kp8", function( editor )
+	WaveLite.split_editor( editor, "up", "content" )
+end )
+
+WaveLite.event.bind( "editor:key:ctrl-alt-kp2", function( editor )
+	WaveLite.split_editor( editor, "down", "content" )
+end )
+
+WaveLite.event.bind( "editor:alt-touch", function( editor, position )
 	if position[2] == 4 and editor.line(4) == "\tClick on this line to copy the path to your clipboard and open it" then
 		local name = editor.line(3):match "^\tWrite your computer username between the '<' and '>' <(.-)>$"
 
@@ -20,30 +40,30 @@ WaveLite.event.bind( "editor:touch", function( editor, position )
 	end
 end )
 
-WaveLite.event.bind( "editor:touch", function( editor, position )
+WaveLite.event.bind( "editor:alt-touch", function( editor, position )
 	local line = editor.line( position[2] ) or ""
 
 	if line:find "%s*open%s+'.-'%s*$" then
-		editor.tabs().open( "file", line:match "%s*open%s+'(.-)'%s*$" ).focus()
+		editor.tabs().open( "file", line:match "%s*open%s+'(.-)'%s*$" ).focus().setLanguage( editor.language() ).setStyle( editor.style() )
 	elseif line:find "%s*open%s+'.-'%s*%[.-%]%s*$" then
-		editor.tabs().open( "file", line:match "%s*open%s+'(.-)'%s*%[.-%]%s*$" ).focus().setLanguage( line:match "%s*open%s+'.-'%s*%[(.-)%]%s*$" )
+		editor.tabs().open( "file", line:match "%s*open%s+'(.-)'%s*%[.-%]%s*$" ).focus().setLanguage( line:match "%s*open%s+'.-'%s*%[(.-)%]%s*$" ).setStyle( editor.style() )
 	end
 end )
 
 WaveLite.event.bind( "editor:key:ctrl-kp8", function( editor ) -- remove cursors from the end of a line
-	editor.tabs().split_up().open "content" .focus()
+	WaveLite.split_tabs( editor.tabs(), "up" ).open "content" .focus()
 end )
 
 WaveLite.event.bind( "editor:key:ctrl-kp2", function( editor ) -- remove cursors from the end of a line
-	editor.tabs().split_down().open "content" .focus()
+	WaveLite.split_tabs( editor.tabs(), "down" ).open "content" .focus()
 end )
 
 WaveLite.event.bind( "editor:key:ctrl-kp4", function( editor ) -- remove cursors from the end of a line
-	editor.tabs().split_left().open "content" .focus()
+	WaveLite.split_tabs( editor.tabs(), "left" ).open "content" .focus()
 end )
 
 WaveLite.event.bind( "editor:key:ctrl-kp6", function( editor ) -- remove cursors from the end of a line
-	editor.tabs().split_right().open "content" .focus()
+	WaveLite.split_tabs( editor.tabs(), "right" ).open "content" .focus()
 end )
 
 WaveLite.event.bind( "editor:key:ctrl-r", function( editor ) -- remove cursors from the end of a line
@@ -139,12 +159,13 @@ WaveLite.event.bind( "editor:key:ctrl-shift-t", function(editor)
 
 	new_editor.focus()
 	new_editor.setLanguage( editor.language() )
+	new_editor.setStyle( editor.style() )
 end )
 
 WaveLite.event.bind( "editor:key:ctrl-w", function(editor)
-	editor.close()
+	-- editor.close()
 end )
 
-WaveLite.event.bind( "editor:key:ctrl-alt-s", function( editor )
+WaveLite.event.bind( "editor:key:alt-shift-s", function( editor )
 	editor.map( editor.select_line )
 end )

@@ -2,6 +2,9 @@
 local ID = 0
 local function newID() ID = ID + 1 return ID end
 
+local function isBoundary( a, b )
+end
+
  --  { position in text, line (+-) 1, clamped character, raw character }
  --> { position in text, line (+-) 1, clamped character, absolute character coordinate }
  --> { position in text, line (+-) 1, clamped character, raw character relative to new line }
@@ -167,6 +170,30 @@ function cursor.down( lines, tabWidth, c )
 	end
 end
 
+function cursor.expandleft( lines, c )
+	local n = c[3]
+	local line = lines[c[2]]
+	local char = line:sub( c[3], c[3] )
+
+	while n > 1 and not isBoundary( char, line:sub( n - 1, n - 1 ) ) do
+		n = n - 1
+	end
+
+	return { c[1] + n - c[3], c[2], n, n }
+end
+
+function cursor.expandright( lines, c )
+	local n = c[3]
+	local line = lines[c[2]]
+	local char = line:sub( c[3] - 1, c[3] - 1 )
+
+	while n <= #line and not isBoundary( char, line:sub( n, n ) ) do
+		n = n + 1
+	end
+
+	return { c[1] + n - c[3], c[2], n, n }
+end
+
 function cursor.left( lines, c )
 	if c[3] > 1 then
 		return { c[1] - 1, c[2], c[3] - 1, c[3] - 1 }
@@ -177,6 +204,22 @@ function cursor.left( lines, c )
 	end
 end
 
+function cursor.leftword( lines, c )
+	if c[3] == 1 then
+		return cursor.left( line, c )
+	end
+
+	local line = lines[c[2]]
+	local character = line:sub( c[3] - 1, c[3] - 1 )
+	local n = 1
+
+	while c[3] - n > 1 and not isBoundary( character, line:sub( c[3] - n - 1, c[3] - n - 1 ) ) do
+		n = n + 1
+	end
+
+	return { c[1] - n, c[2], c[3] - n, c[3] - n }
+end
+
 function cursor.right( lines, c )
 	if c[3] <= #lines[c[2]] then
 		return { c[1] + 1, c[2], c[3] + 1, c[3] + 1 }
@@ -185,6 +228,22 @@ function cursor.right( lines, c )
 	else
 		return c
 	end
+end
+
+function cursor.rightword( lines, c )
+	local line = lines[c[2]]
+	local character = line:sub( c[3], c[3] )
+	local n = 1
+
+	if c[3] == #line + 1 then
+		return cursor.right( line, c )
+	end
+
+	while c[3] + n <= #line and not isBoundary( character, line:sub( c[3] + n, c[3] + n ) ) do
+		n = n + 1
+	end
+
+	return { c[1] + n, c[2], c[3] + n, c[3] + n }
 end
 
 return cursor

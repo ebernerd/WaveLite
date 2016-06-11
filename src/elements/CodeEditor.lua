@@ -30,8 +30,10 @@ local function mouseToPosition( editor, x, y )
 	local tline = editor.lines[line]
 	local totalWidth = 0
 
-	if relativeX < 0 then
-		return { libcursor.toPosition( editor.lines, line, 1 ), line, 1, 0 }
+	if relativeX < -codePadding then
+		return { libcursor.toPosition( editor.lines, line, 1 ), line, 1, 1 }
+	elseif relativeX < 0 then
+		relativeX = 0
 	end
 
 	for i = 1, #tline do
@@ -117,6 +119,7 @@ local function newCodeEditor( mode, title, content, path )
 	editor.cursorblink = 0
 	editor.langname = "core:plain text"
 	editor.stylename = "core:light"
+	editor.clicked = false
 
 	editor.api = newEditorAPI( editor )
 
@@ -260,7 +263,10 @@ local function newCodeEditor( mode, title, content, path )
 		libevent.invoke( "editor:" ..
 			(util.isCtrlHeld() and "ctrl-" or "") ..
 			(util.isAltHeld() and "alt-" or "") .. 
-			(util.isShiftHeld() and "shift-" or "") .. "touch", editor.api, mouseToPosition( editor, x, y ), button ) -- change to use char coords
+			(util.isShiftHeld() and "shift-" or "") ..
+			(editor.clicked and os.clock() - editor.clicked < 0.2 and "double-" or "") ..
+			"touch", editor.api, mouseToPosition( editor, x, y ), button ) -- change to use char coords
+		editor.clicked = (not editor.clicked or os.clock() - editor.clicked >= 0.2) and os.clock() or false
 	end
 
 	function editor:onMove( x, y, button )

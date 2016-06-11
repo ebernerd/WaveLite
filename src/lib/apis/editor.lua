@@ -287,6 +287,14 @@ local function newEditorAPI( editor )
 		return public
 	end
 
+	function api.cursor_expand( cursor )
+		local a, b = libcursor.order( cursor )
+		cursor.selection = libcursor.expandleft( editor.lines, a )
+		cursor.position = libcursor.expandright( editor.lines, b )
+		
+		tryMerge()
+	end
+
 	function api.cursor_home( cursor, options )
 		options = options or {}
 
