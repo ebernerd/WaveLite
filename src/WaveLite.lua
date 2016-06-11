@@ -15,9 +15,9 @@ You'll want a symlink AppData/Roaming/LOVE/WaveLite <==> <repo>/data
 	Write your computer username between the '<' and '>' <here>
 	Click on this line to copy the path to your clipboard and open it
 
-Plugins:
-	plugins/core.lua
-	plugins/custom.lua
+Plugins (click to open):
+	open 'plugins/core.lua' [core:lua]
+	open 'plugins/custom.lua' [core:lua]
 
 Select one of those and press ctrl-shift-t to open it up
 ]]

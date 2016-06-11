@@ -26,7 +26,7 @@ function log:write( ... )
 
 	local text = table.concat( s, ", " )
 
-	love.filesystem.append( self.path, "[" .. time() .. "]\t\t" .. text .. "\n" )
+	love.filesystem.append( self.path, "[" .. time() .. "]::\t" .. text .. "\n" )
 end
 
 return setmetatable( log, { __call = log.write } )

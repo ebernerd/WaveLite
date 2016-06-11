@@ -6,18 +6,6 @@ WaveLite.resource.register( "language", "plain text", "resources.languages.plain
 WaveLite.resource.register( "language", "lua", "resources.languages.lua" )
 WaveLite.resource.register( "language", "flux", "resources.languages.flux" )
 
-WaveLite.event.bind( "editor:touch", function( editor, position )
-	if position[2] == 4 and editor.line(4) == "\tClick on this line to copy the path to your clipboard and open it" then
-		local name = editor.line(3):match "^\tWrite your computer username between the '<' and '>' <(.-)>$"
-
-		if name then
-			local path = "C:\\Users\\" .. name .. "\\Appdata\\Roaming\\LOVE\\WaveLite"
-			system.copy( path )
-			system.open_url( path )
-		end
-	end
-end )
-
 WaveLite.event.bind( "editor:touch", function(editor, position)
 	if position[4] == 0 then
 		editor.set_cursor( position ).map( editor.select_line )

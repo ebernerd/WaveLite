@@ -1,4 +1,35 @@
 
+WaveLite.event.bind( "editor:touch", function( editor, position )
+	if position[2] == 4 and editor.line(4) == "\tClick on this line to copy the path to your clipboard and open it" then
+		local name = editor.line(3):match "^\tWrite your computer username between the '<' and '>' <(.-)>$"
+
+		if name then
+			local path = "C:\\Users\\" .. name .. "\\Appdata\\Roaming\\LOVE\\WaveLite"
+			if system.open_url( path ) then
+				system.copy( path )
+			else
+				local char = 56
+				editor.set_cursor( { position[1] + char - position[3], position[2], char, char } )
+				editor.map( editor.goto_line, nil, position[2] - 1 )
+				
+				for i = 1, #name do
+					editor.map( editor.cursor_right, nil, { select = true } )
+				end
+			end
+		end
+	end
+end )
+
+WaveLite.event.bind( "editor:touch", function( editor, position )
+	local line = editor.line( position[2] ) or ""
+
+	if line:find "%s*open%s+'.-'%s*$" then
+		editor.tabs().open( "file", line:match "%s*open%s+'(.-)'%s*$" ).focus()
+	elseif line:find "%s*open%s+'.-'%s*%[.-%]%s*$" then
+		editor.tabs().open( "file", line:match "%s*open%s+'(.-)'%s*%[.-%]%s*$" ).focus().setLanguage( line:match "%s*open%s+'.-'%s*%[(.-)%]%s*$" )
+	end
+end )
+
 WaveLite.event.bind( "editor:key:ctrl-kp8", function( editor ) -- remove cursors from the end of a line
 	editor.tabs().split_up().open "content" .focus()
 end )

@@ -9,6 +9,7 @@ local util = require "src.lib.util"
 
 local TABPADDING = 5
 local TRANSITION_TIME = 0.3
+local SCROLLSPEED = 35
 local _finished
 
 local function recalcwidths( tabs )
@@ -46,6 +47,8 @@ local function newTabManager()
 	tabs.selected_size = 0
 	tabs.selected_left_tween = nil
 	tabs.selected_size_tween = nil
+	tabs.scroll_tween = nil
+	tabs.scroll_target = 0
 	tabs.toIndex = 0
 	tabs.display.enable_keyboard = true
 	tabs.enable_keyboard = true
@@ -64,7 +67,7 @@ local function newTabManager()
 			end
 
 			if self.touches[button].moved then
-				tabs.scrollX = math.max( 0, math.min( self.mount - x, totalwidth - self.width ) )
+				tabs.scrollX = math.floor( math.max( 0, math.min( self.mount - x, totalwidth - self.width ) ) )
 			end
 		end
 	end
@@ -86,6 +89,40 @@ local function newTabManager()
 						break
 					end
 				end
+			end
+		end
+	end
+
+	function tabs.display:onWheelMoved( x, y, button )
+		local v = x == 0 and y or y == 0 and x or math.sqrt( x * x + y * y ) * math.abs(y) / y * math.abs(x) / x
+		local totalwidth = 0
+
+		for i = 1, #tabs.tabwidths do
+			totalwidth = totalwidth + tabs.tabwidths[i]
+		end
+
+		tabs.scrollX = math.floor( math.max( 0, math.min( tabs.scrollX - v * SCROLLSPEED, totalwidth - self.width ) ) )
+	end
+
+	function tabs.display:onUpdate( dt )
+		local totalwidth = 0
+
+		for i = 1, #tabs.tabwidths do
+			totalwidth = totalwidth + tabs.tabwidths[i]
+		end
+
+		local v = math.floor( math.max( 0, math.min( tabs.scrollX, totalwidth - self.width ) ) )
+
+		if v ~= tabs.scrollX and (not tabs.scroll_tween or v ~= tabs.scroll_target) then
+			tabs.scroll_tween = tween( tabs.scrollX, v, TRANSITION_TIME )
+			tabs.scroll_target = v
+		end
+		
+		if v ~= tabs.scrollX then
+			tabs.scrollX, _finished = tabs.scroll_tween( dt, v )
+
+			if _finished then
+				tabs.scroll_tween = nil
 			end
 		end
 	end
@@ -119,6 +156,7 @@ local function newTabManager()
 		for i = #self.editors, 1, -1 do
 			if self.editors[i] == editor then
 				table.remove( self.editors, i )
+				table.remove( self.tabwidths, i )
 
 				if i == self.toIndex then
 					if self.editors[i] then

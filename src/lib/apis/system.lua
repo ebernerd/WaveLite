@@ -14,7 +14,7 @@ local function newSystemAPI()
 	function system.open_url( url )
 		if type( url ) ~= "string" then return error( "expected string url, got " .. type( url ) ) end
 
-		love.system.openURL( url )
+		return love.system.openURL( url )
 	end
 
 	function system.read_file( file )

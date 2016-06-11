@@ -14,7 +14,7 @@ local function newTabManagerAPI(tabs)
 		if tabtype == "file" then
 			if type( data ) ~= "string" then return error( "expected string filename, got " .. type( data ) ) end
 
-			return tabs:addEditor( editor( "file", data:gsub( "^.*/", "" ), love.filesystem.exists( data ) and love.filesystem.read( data ) or "", data ) )
+			return tabs:addEditor( editor( "file", data:gsub( "^.*/", "" ), love.filesystem.isFile( data ) and love.filesystem.read( data ) or "", data ) )
 
 		elseif tabtype == "content" then
 			if data and type( data ) ~= "string" then
@@ -27,7 +27,7 @@ local function newTabManagerAPI(tabs)
 			return tabs:addEditor( editor( "content", data2, data ) )
 
 		elseif tabtype == "log" then
-			return tabs:addEditor( editor( "file", log.path:gsub( "^.*/", "" ), love.filesystem.exists( log.path ) and love.filesystem.read( log.path ) or "", log.path ) )
+			return tabs:addEditor( editor( "file", log.path:gsub( "^.*/", "" ), love.filesystem.isFile( log.path ) and love.filesystem.read( log.path ) or "", log.path ) )
 
 		elseif tabtype == "canvas" then
 
