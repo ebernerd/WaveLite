@@ -3,6 +3,7 @@ local ID = 0
 local function newID() ID = ID + 1 return ID end
 
 local function isBoundary( a, b )
+	return not ((a:find "[%w_]" and b:find "[%w_]") or (a:find "%s" and b:find "%s") or (a:find "[^%w_%s]" and b:find "[^%w_%s]"))
 end
 
  --  { position in text, line (+-) 1, clamped character, raw character }
