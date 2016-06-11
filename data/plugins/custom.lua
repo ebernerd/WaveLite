@@ -97,6 +97,23 @@ WaveLite.event.bind( "editor:key:ctrl-t", function(editor)
 	new_editor.setLanguage( editor.language() )
 end )
 
+WaveLite.event.bind( "editor:key:ctrl-shift-t", function(editor)
+	local file
+
+	editor.map( function( cursor )
+		file = editor.read( cursor, true )
+	end, editor.filters.first() )
+
+	local new_editor = editor.tabs().open( "file", file )
+
+	new_editor.focus()
+	new_editor.setLanguage( editor.language() )
+end )
+
 WaveLite.event.bind( "editor:key:ctrl-w", function(editor)
 	editor.close()
+end )
+
+WaveLite.event.bind( "editor:key:ctrl-alt-s", function( editor )
+	editor.map( editor.select_line )
 end )

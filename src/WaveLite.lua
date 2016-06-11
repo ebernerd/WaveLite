@@ -1,22 +1,36 @@
 
 local UIPanel = require "src.elements.UIPanel"
 local style = require "src.style"
-local plugin = require "src.lib.plugin"
 
 local WaveLite = {}
 
 WaveLite.style_UI = style.new()
 WaveLite.style_code = style.new()
 
+WaveLite.project = false
+
+local text = [[
+
+You'll want a symlink AppData/Roaming/LOVE/WaveLite <==> <repo>/data
+
+Plugins:
+	plugins/core.lua
+	plugins/custom.lua
+
+Select one of those and press ctrl-shift-t to open it up
+]]
+
 function WaveLite.load()
-	plugin.load( "core", "resources/plugins/core.lua" )
-	plugin.load( "custom", "resources/plugins/custom.lua" )
+	local plugin = require "src.lib.plugin"
+
+	plugin.load "core"
+	plugin.load "custom"
 
 	-- global configs, settings, reference to main pane handler, etc
 
 	local split = require "src.elements.Divisions" "horizontal"
 	local tabs = split:add( require "src.elements.TabManager" () )
-	local editor = tabs.api.open "content" .focus()
+	local editor = tabs.api.open( "content", text ).focus()
 
 	split.x = 200
 	split.y = 0
@@ -26,11 +40,6 @@ function WaveLite.load()
 	end
 
 	UIPanel.main:add( split )
-
-	require "src.lib.event" .bind( "editor:key:ctrl-shift-t", function()
-		local tabs = split:add( require "src.elements.TabManager" () )
-		tabs.api.open "content" .focus()
-	end )
 end
 
 return WaveLite

@@ -1,4 +1,6 @@
 
+local log = require "src.lib.log"
+
 local event = {}
 local events = {}
 
@@ -67,8 +69,7 @@ function event.invoke( event, param, ... )
 		local ok, err = pcall( etocall[i], param, ... )
 
 		if not ok then
-			error( err, 0 )
-			-- do something?
+			log( err )
 		end
 	end
 end

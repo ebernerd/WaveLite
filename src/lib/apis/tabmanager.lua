@@ -2,6 +2,7 @@
 local util = require "src.lib.util"
 local editor = require "src.elements.CodeEditor"
 local divisions = require "src.elements.Divisions"
+local log = require "src.lib.log"
 
 local function newTabManagerAPI(tabs)
 	local tabmanager = require "src.elements.TabManager"
@@ -11,15 +12,9 @@ local function newTabManagerAPI(tabs)
 
 	function api.open( tabtype, data, data2 )
 		if tabtype == "file" then
-			if type( data ) ~= "string" then
-				return error( "expected string filename, got " .. type( data ) )
-			end
+			if type( data ) ~= "string" then return error( "expected string filename, got " .. type( data ) ) end
 
-			if not love.filesystem.exists( data ) then
-				return false, "no such file '" .. data .. "'"
-			end
-
-			return tabs:addEditor( editor( "file", data:gsub( "^.*/", "" ), love.filesystem.read( data ) ) )
+			return tabs:addEditor( editor( "file", data:gsub( "^.*/", "" ), love.filesystem.exists( data ) and love.filesystem.read( data ) or "", data ) )
 
 		elseif tabtype == "content" then
 			if data and type( data ) ~= "string" then
@@ -30,6 +25,9 @@ local function newTabManagerAPI(tabs)
 			end
 
 			return tabs:addEditor( editor( "content", data2, data ) )
+
+		elseif tabtype == "log" then
+			return tabs:addEditor( editor( "file", log.path:gsub( "^.*/", "" ), love.filesystem.exists( log.path ) and love.filesystem.read( log.path ) or "", log.path ) )
 
 		elseif tabtype == "canvas" then
 

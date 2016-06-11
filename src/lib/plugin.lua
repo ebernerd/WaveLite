@@ -1,8 +1,22 @@
 
 local log = require "src.lib.log"
 local event = require "src.lib.event"
+local WaveLite = require "src.WaveLite"
 
 local loaded = {}
+
+local function searchdir( dir, file )
+	for i, f in ipairs( love.filesystem.getDirectoryItems( dir ) ) do
+		if f == file then
+			return dir .. "/" .. file
+		end
+	end
+	for i, f in ipairs( love.filesystem.getDirectoryItems( dir ) ) do
+		if love.filesystem.isDirectory( dir .. "/" .. f ) then
+			searchdir( dir, file )
+		end
+	end
+end
 
 local function getenv( name )
 	-- uuuuuugh
@@ -51,14 +65,25 @@ end
 function plugin.load( name, path )
 	if not path then
 
-		-- look in Project path, ehh, WaveLite.project_path?
-		-- look in /user/plugins
-		-- look in /WaveLite/plugins
+		if WaveLite.project then
+			-- look in Project path, ehh, WaveLite.project.path?
+		end
 
+		if not path and love.filesystem.isDirectory "user/plugins" then
+			for i, file in ipairs( love.filesystem.getDirectoryItems "user/plugins" ) do
+				-- look in /user/plugins
+			end
+		end
+
+		if not path and love.filesystem.isDirectory "plugins" then
+			path = searchdir( "plugins" .. (name:find "%." and name:gsub( "%.", "/" ):match ".+/" or ""), (name:find "%." and name:gsub( ".+%.", "" ) or name) .. ".lua" )
+		end
 	end
 
 	if path then
 		load( name, path )
+	else
+		return error( "failed to load plugin '" .. name .. "' ('" .. path .. "'): not found" )
 	end
 end
 

@@ -1,4 +1,14 @@
 
+local function time()
+	local n = tostring( math.floor( os.clock() * 100 ) / 100 )
+	if not n:find "%." then
+		return n .. ".00"
+	elseif #n:match "%.(.+)" == 1 then
+		return n .. "0"
+	end
+	return n
+end
+
 local log = {}
 
 log.path = os.time() .. ".log"
@@ -16,7 +26,7 @@ function log:write( ... )
 
 	local text = table.concat( s, ", " )
 
-	love.filesystem.append( self.path, text .. "\n" )
+	love.filesystem.append( self.path, "[" .. time() .. "]\t\t" .. text .. "\n" )
 end
 
 return setmetatable( log, { __call = log.write } )

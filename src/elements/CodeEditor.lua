@@ -79,12 +79,14 @@ local function rescrollY( editor )
 		)
 end
 
-local function newCodeEditor( mode, title, content )
+local function newCodeEditor( mode, title, content, path )
 
 	local editor = UIPanel.new()
 
 	editor.type = "editor"
 	editor.mode = mode
+	editor.path = path
+	editor.opentime = os.time()
 	editor.title = title or "untitled"
 	editor.style = libresource.load( "style", "core:light" )
 	editor.lines = util.splitlines( content or "" )
@@ -232,6 +234,11 @@ local function newCodeEditor( mode, title, content )
 		end
 
 		editor.cursorblink = editor.cursorblink + dt
+
+		if self.path and love.filesystem.getLastModified( self.path ) > self.opentime then
+			self.opentime = os.time()
+			libevent.invoke( "editor:file-modified", self.api )
+		end
 	end
 
 	function editor:onFocus()

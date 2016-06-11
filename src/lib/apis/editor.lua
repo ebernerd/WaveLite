@@ -30,6 +30,37 @@ local function newEditorAPI( editor )
 	api.filters = util.protected_table( filters )
 	api.positions = util.protected_table( positions )
 
+	function api.refresh()
+		if editor.path then
+			editor.lines = util.splitlines( love.filesystem.isFile( editor.path ) and love.filesystem.read( editor.path ) or "" )
+			libformatting.format( editor.lines, editor.formatting )
+
+			for i = 1, #editor.cursors do
+				if editor.cursors[i].position[2] > #editor.lines then
+					editor.cursors[i].position[2] = #editor.lines
+				end
+				if editor.cursors[i].selection and editor.cursors[i].selection[2] > #editor.lines then
+					editor.cursors[i].selection[2] = #editor.lines
+				end
+				if editor.cursors[i].position[3] > #editor.lines[editor.cursors[i].position[2]] then
+					editor.cursors[i].position[3] = #editor.lines[editor.cursors[i].position[2]] + 1
+				end
+				if editor.cursors[i].selection and editor.cursors[i].selection[3] > #editor.lines[editor.cursors[i].selection[2]] then
+					editor.cursors[i].selection[3] = #editor.lines[editor.cursors[i].selection[2]] + 1
+				end
+			end
+
+			libcursor.merge( editor.cursors )
+		end
+	end
+
+	function api.save()
+		if editor.path then
+			love.filesystem.write( editor.path, table.concat( editor.lines, "\n" ) )
+			editor.opentime = os.time()
+		end
+	end
+
 	function api.tabs()
 		return editor.parent.api
 	end
@@ -89,6 +120,14 @@ local function newEditorAPI( editor )
 
 	function api.mode()
 		return editor.mode
+	end
+
+	function api.setPath( path )
+		editor.path = path
+	end
+
+	function api.path()
+		return editor.path
 	end
 
 	function api.write( cursor, text )

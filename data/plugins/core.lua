@@ -33,6 +33,14 @@ WaveLite.event.bind( "editor:move", function(editor, position)
 	editor.map( editor.select_to, editor.filters.last(), position )
 end )
 
+WaveLite.event.bind( "editor:key:ctrl-s", function( editor )
+	editor.save()
+end )
+
+WaveLite.event.bind( "editor:file-modified #mode=file", function( editor )
+	editor.refresh()
+end )
+
 WaveLite.event.bind( "editor:key:ctrl-c", function( editor )
 	local t = {}
 	editor.map( function( cursor )
@@ -81,10 +89,6 @@ WaveLite.event.bind( "editor:key:ctrl-a", function( editor ) -- select all text
 		.map( editor.deselect )
 		.map( editor.cursor_home, nil, { full = true } )
 		.map( editor.cursor_end, nil, { full = true, select = true } )
-end )
-
-WaveLite.event.bind( "editor:key:ctrl-s", function( editor )
-	editor.map( editor.select_line )
 end )
 
 WaveLite.event.bind( "editor:key:kp7", function( editor )

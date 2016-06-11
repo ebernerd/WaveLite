@@ -1,0 +1,2 @@
+[12.32]		[string "custom"]:6: '=' expected near 'WaveLite'
+[12.43]		src/lib/apis/editor.lua:45: attempt to get length of a nil value
