@@ -12,6 +12,8 @@ WaveLite.project = false
 local text = [[
 
 You'll want a symlink AppData/Roaming/LOVE/WaveLite <==> <repo>/data
+	Write your computer username between the '<' and '>' <here>
+	Click on this line to copy the path to your clipboard and open it
 
 Plugins:
 	plugins/core.lua

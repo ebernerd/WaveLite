@@ -11,6 +11,12 @@ local util = require "src.lib.util"
 local function newSystemAPI()
 	local system = {}
 
+	function system.open_url( url )
+		if type( url ) ~= "string" then return error( "expected string url, got " .. type( url ) ) end
+
+		love.system.openURL( url )
+	end
+
 	function system.read_file( file )
 		if type( file ) ~= "string" then return error( "expected string file, got " .. type( file ) ) end
 

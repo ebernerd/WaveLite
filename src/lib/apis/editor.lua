@@ -456,19 +456,39 @@ local function newEditorAPI( editor )
 		return public
 	end
 
-	function filters.first()
+	function filters.first( n )
 		local i = 0
+		n = n or 1
 		return function()
 			i = i + 1
-			return i == 1
+			return i <= n
 		end
 	end
 
-	function filters.last()
+	function filters.last( n )
 		local i = 0
+		n = n or 1
 		return function()
 			i = i + 1
-			return i == #editor.cursors
+			return i > #editor.cursors - n
+		end
+	end
+
+	function filters.only( n )
+		local i = 0
+		n = n or 1
+		return function()
+			i = i + 1
+			return i == n
+		end
+	end
+
+	function filters.except( n )
+		local i = 0
+		n = n or 1
+		return function()
+			i = i + 1
+			return i ~= n
 		end
 	end
 
@@ -478,22 +498,6 @@ local function newEditorAPI( editor )
 
 	function filters.sofline( cursor )
 		return cursor.position[3] == 1
-	end
-
-	function filters.count_start( i )
-			i = i or 1
-		return function()
-			i = i - 1
-			return i >= 0
-		end
-	end
-
-	function filters.count_end( i )
-		i = #editor.cursors - (i or 1)
-		return function()
-			i = i - 1
-			return i < 0
-		end
 	end
 
 	function filters.has_selection()

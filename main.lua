@@ -1,4 +1,14 @@
 
+if not love.filesystem.isDirectory "plugins" then
+	love.filesystem.copy( "data/plugins", "plugins" )
+end
+if not love.filesystem.isDirectory "user" then
+	love.filesystem.copy( "data/user", "user" )
+end
+if not love.filesystem.isDirectory "resources" then
+	love.filesystem.copy( "data/resources", "resources" )
+end
+
 local UIPanel = require "src.elements.UIPanel"
 local plugin = require "src.lib.plugin"
 local WaveLite = require "src.WaveLite"
