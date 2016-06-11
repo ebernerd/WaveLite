@@ -1,7 +1,4 @@
 
-local light_theme = true
-local language = 0
-
 WaveLite.event.bind( "editor:key:ctrl-kp8", function( editor ) -- remove cursors from the end of a line
 	editor.tabs().split_up().open "content" .focus()
 end )

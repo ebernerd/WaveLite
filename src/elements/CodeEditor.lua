@@ -65,7 +65,7 @@ local function rescrollX( editor )
 	editor.scrollX = 
 		math.max( 0, 
 			math.min( editor.contentWidth + 2 * space - editor.viewWidth,
-				editor.scrollBottomBarLeft * (editor.contentWidth - editor.viewWidth) / (editor.scrollBottom.width - SCROLLBARPADDING * 2 - editor.scrollBottomBarSize)
+				editor.scrollBottomBarLeft * ((editor.contentWidth + 2 * space) - editor.viewWidth) / (editor.scrollBottom.width - SCROLLBARPADDING * 2 - editor.scrollBottomBarSize)
 			)
 		)
 end
